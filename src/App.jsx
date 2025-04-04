@@ -1,35 +1,19 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import Bookshelf from "@/components/BookShelf"
 
-function App() {
-  const [count, setCount] = useState(0)
-
+export default function App() {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <main className="min-h-screen bg-gradient-to-b from-[#0A0A0A] to-[#1A1A1A] p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        <header className="text-center mb-12 pt-8">
+          <h1 className="text-4xl md:text-5xl font-serif text-[#D4AF37]/80 mb-2">
+            Biblioteca de Hogwarts
+          </h1>
+          <p className="text-[#F0F0F0]/70 text-lg italic">
+            "Colección de libros mágicos antiguos de las cuatro casas"
+          </p>
+        </header>
+        <Bookshelf />
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    </main>
   )
 }
-
-export default App
