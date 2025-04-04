@@ -1,19 +1,18 @@
 import { cn } from "@/lib/utils"
+import { BOOK_COLOR } from "@/lib/constants"
 
 export default function BookSpine({ book, onMouseEnter, onMouseLeave }) {
-  const darkenedColor = book.color
-    .replace(/#/, "#")
-    .replace(/[0-9a-f]{2}/g, (hex) => {
-      const num = Number.parseInt(hex, 16)
-      const darkened = Math.max(0, num - 40)
-        .toString(16)
-        .padStart(2, "0")
-      return darkened
-    })
+  const darkenedColor = BOOK_COLOR.replace(/[0-9a-f]{2}/g, (hex) => {
+    const num = Number.parseInt(hex, 16)
+    const darkened = Math.max(0, num - 40)
+      .toString(16)
+      .padStart(2, "0")
+    return darkened
+  })
 
   return (
     <div
-      className="h-[280px] w-full rounded-sm cursor-pointer transition-all duration-300 hover:translate-y-[-5px] relative group overflow-hidden"
+      className="h-[220px] w-full rounded-sm cursor-pointer transition-all duration-300 hover:translate-y-[-5px] relative group overflow-hidden"
       style={{
         backgroundColor: darkenedColor,
         boxShadow: `inset 0 0 0 1px rgba(255,255,255,0.05), 
@@ -47,10 +46,10 @@ export default function BookSpine({ book, onMouseEnter, onMouseLeave }) {
 
       <div className="h-full flex flex-col justify-between p-2 relative">
         <div
-          className="writing-vertical-lr text-center font-serif text-white/90 text-sm md:text-base font-medium tracking-wide absolute inset-0 flex items-center justify-center px-2"
+          className="writing-vertical-lr -rotate-180 text-center font-serif text-white/90 text-sm md:text-base font-medium tracking-wide absolute inset-0 flex items-center justify-center px-2 max-h-55 m-auto"
           style={{ textShadow: "1px 1px 2px rgba(0,0,0,0.5)" }}
         >
-          {book.title}
+          <p className="flex-wrap">{book.title}</p>
         </div>
 
         <div className="writing-vertical-lr text-[10px] text-white/50 opacity-80 mt-auto ml-auto">
@@ -63,11 +62,8 @@ export default function BookSpine({ book, onMouseEnter, onMouseLeave }) {
         />
       </div>
 
-      <div className="absolute top-[15%] left-0 right-0 h-[1px] bg-black/20" />
-      <div className="absolute bottom-[15%] left-0 right-0 h-[1px] bg-black/20" />
-
-      <div className="absolute top-[30%] left-[20%] w-[60%] h-[1px] bg-black/30 rotate-[15deg]" />
-      <div className="absolute top-[70%] right-[10%] w-[40%] h-[1px] bg-black/30 rotate-[-20deg]" />
+      <div className="absolute top-[10%] left-0 right-0 h-[1px] bg-black/20" />
+      <div className="absolute bottom-[10%] left-0 right-0 h-[1px] bg-black/20" />
 
       <div
         className={cn(
