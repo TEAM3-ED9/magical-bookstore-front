@@ -12,7 +12,7 @@ export default function BookSpine({ book, onMouseEnter, onMouseLeave }) {
 
   return (
     <div
-      className="h-[280px] w-full rounded-sm cursor-pointer transition-all duration-300 hover:translate-y-[-5px] relative group overflow-hidden"
+      className="h-[220px] w-full rounded-sm cursor-pointer transition-all duration-300 hover:translate-y-[-5px] relative group overflow-hidden"
       style={{
         backgroundColor: darkenedColor,
         boxShadow: `inset 0 0 0 1px rgba(255,255,255,0.05), 
