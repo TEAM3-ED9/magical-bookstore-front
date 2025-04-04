@@ -1,28 +1,9 @@
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
+import { ACCENT_COLOR, DARK_COLOR } from "@/lib/constants"
 
 export default function BookPopup({ book, position }) {
   const [isVisible, setIsVisible] = useState(false)
-
-  const darkenedColor = book.color
-    .replace(/#/, "#")
-    .replace(/[0-9a-f]{2}/g, (hex) => {
-      const num = Number.parseInt(hex, 16)
-      const darkened = Math.max(0, num - 40)
-        .toString(16)
-        .padStart(2, "0")
-      return darkened
-    })
-
-  const agedAccent = book.accent
-    .replace(/#/, "#")
-    .replace(/[0-9a-f]{2}/g, (hex) => {
-      const num = Number.parseInt(hex, 16)
-      const darkened = Math.max(0, num - 20)
-        .toString(16)
-        .padStart(2, "0")
-      return darkened
-    })
 
   useEffect(() => {
     setIsVisible(true)
@@ -46,11 +27,11 @@ export default function BookPopup({ book, position }) {
           "before:border-8 before:border-transparent"
         )}
         style={{
-          backgroundColor: darkenedColor,
-          borderColor: agedAccent,
+          backgroundColor: DARK_COLOR,
+          borderColor: ACCENT_COLOR,
           borderWidth: "2px",
-          boxShadow: `0 10px 25px ${darkenedColor}80`,
-          "--before-color": agedAccent,
+          boxShadow: `0 10px 25px ${DARK_COLOR}80`,
+          "--before-color": ACCENT_COLOR,
         }}
       >
         <div className="absolute inset-0 overflow-hidden rounded-lg">
@@ -63,7 +44,7 @@ export default function BookPopup({ book, position }) {
           />
           <div
             className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b to-transparent"
-            style={{ from: `${agedAccent}10` }}
+            style={{ from: `${ACCENT_COLOR}10` }}
           />
         </div>
 
@@ -71,8 +52,8 @@ export default function BookPopup({ book, position }) {
           <div
             className="inline-block px-2 py-1 rounded text-xs font-bold mb-2"
             style={{
-              backgroundColor: agedAccent,
-              color: darkenedColor,
+              backgroundColor: ACCENT_COLOR,
+              color: DARK_COLOR,
             }}
           >
             {book.house}
@@ -80,12 +61,11 @@ export default function BookPopup({ book, position }) {
 
           <h3
             className="font-serif text-lg font-bold mb-1"
-            style={{ color: agedAccent }}
+            style={{ color: ACCENT_COLOR }}
           >
             {book.title}
           </h3>
           <p className="text-white/80 text-sm mb-1">Por {book.author}</p>
-          <p className="text-white/60 text-xs mb-3">{book.year}</p>
 
           <div className="h-px bg-gradient-to-r from-transparent via-white/40 to-transparent my-2" />
 
@@ -94,11 +74,11 @@ export default function BookPopup({ book, position }) {
           <div className="absolute -top-2 -right-2 w-8 h-8">
             <div
               className="absolute inset-0 rounded-full animate-ping"
-              style={{ backgroundColor: `${agedAccent}20` }}
+              style={{ backgroundColor: `${ACCENT_COLOR}20` }}
             />
             <div
               className="absolute inset-1 rounded-full animate-pulse"
-              style={{ backgroundColor: `${agedAccent}40` }}
+              style={{ backgroundColor: `${ACCENT_COLOR}40` }}
             />
           </div>
         </div>
