@@ -1,4 +1,4 @@
-import Bookshelf from "@/components/BookShelf"
+import Bookshelf from "@/components/BookShelf";
 
 export default function App() {
   return (
@@ -6,14 +6,14 @@ export default function App() {
       <div className="max-w-7xl mx-auto">
         <header className="text-center mb-12 pt-8">
           <h1 className="text-4xl md:text-5xl font-serif text-[#D4AF37]/80 mb-2">
-            El Atrio de Rowena
+            The Atrio of Rowena
           </h1>
           <p className="text-[#F0F0F0]/70 text-lg italic">
-            Colección de libros mágicos antiguos de las cuatro casas
+            Colections of old magic books of four house of the Atrio of Rowena
           </p>
         </header>
         <Bookshelf />
       </div>
     </main>
-  )
+  );
 }
