@@ -1,11 +1,12 @@
-import { useState } from "react"
-import BookSpine from "@/components/BookSpine"
-import BookPopup from "@/components/BookPopup"
-import useSWR from "swr"
-import { BACKEND_URL } from "@/lib/constants"
-import { fetcher } from "@/lib/utils"
-import { usePhraseCycle } from "../hooks/usePhraseCycle"
-import { DURATION_MS } from "@/lib/constants"
+import { useState } from "react";
+import BookSpine from "@/components/BookSpine";
+import BookPopup from "@/components/BookPopup";
+import BookSearch from "@/components/molecules/BookSearch";
+import useSWR from "swr";
+import { BACKEND_URL } from "@/lib/constants";
+import { fetcher } from "@/lib/utils";
+import { usePhraseCycle } from "../hooks/usePhraseCycle";
+import { DURATION_MS } from "@/lib/constants";
 
 const loadingPhrases = [
   "Analizando hechizos mágicos...",
@@ -14,7 +15,7 @@ const loadingPhrases = [
   "Conjurando hechizos de alto nivel...",
   "Lanzando Wingardium Leviosa a los libros mágicos...",
   "Bienvenido joven hechizero...",
-]
+];
 
 const reloadErrorPhrases = [
   "¡Oh no! Un dementor ha atacado la blioteca",
@@ -22,35 +23,36 @@ const reloadErrorPhrases = [
   "¡Reparo! Reparando vulnerabilidades mágicas",
   "¡Tempus Renovato! Recargando el tiempo mágico",
   "¡Anapneo! Limpiando hechizos viejos",
-]
+];
 
 export default function BookShelf() {
-  const [activeBook, setActiveBook] = useState(null)
-  const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 })
+  const [activeBook, setActiveBook] = useState(null);
+  const [filteredBooks, setFilteredBooks] = useState([]);
+  const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
   const {
     data: books,
     error,
     isLoading,
   } = useSWR(BACKEND_URL, fetcher, {
     errorRetryInterval: (DURATION_MS * 2) / reloadErrorPhrases.length,
-  })
-  const loadingPhrase = usePhraseCycle(loadingPhrases)
-  const reloadErrorPhrase = usePhraseCycle(reloadErrorPhrases)
+  });
+  const loadingPhrase = usePhraseCycle(loadingPhrases);
+  const reloadErrorPhrase = usePhraseCycle(reloadErrorPhrases);
 
   const handleBookHover = (id, event) => {
-    const element = event
-    const rect = element.currentTarget.getBoundingClientRect()
+    const element = event;
+    const rect = element.currentTarget.getBoundingClientRect();
 
-    setActiveBook(id)
+    setActiveBook(id);
     setPopupPosition({
       x: rect.left + rect.width / 2,
       y: rect.top - 10,
-    })
-  }
+    });
+  };
 
   const handleBookLeave = () => {
-    setActiveBook(null)
-  }
+    setActiveBook(null);
+  };
 
   return (
     <div className="relative min-h-[calc(100vh-16rem)]">
@@ -88,9 +90,10 @@ export default function BookShelf() {
       ) : (
         !error && (
           <>
+            <BookSearch setFilteredBooks={setFilteredBooks} />
             <div className="bg-[#5D4037] p-4 rounded-lg shadow-xl">
               <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-1 md:gap-2">
-                {books.map((book) => (
+                {filteredBooks.map((book) => (
                   <BookSpine
                     key={book.id}
                     book={book}
@@ -110,5 +113,5 @@ export default function BookShelf() {
         )
       )}
     </div>
-  )
+  );
 }
