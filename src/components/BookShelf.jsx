@@ -109,7 +109,7 @@ export default function BookShelf() {
       ) : (
         <>
           <BookSearch setSearch={setSearchTerm} />
-          <div className="bg-[#5D4037] p-4 rounded-lg shadow-xl">
+          <div className="bg-shelf p-4 rounded-lg shadow-xl">
             <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-1 md:gap-2">
               {isLoadingBooks ? (
                 <SearchBooksLoader />

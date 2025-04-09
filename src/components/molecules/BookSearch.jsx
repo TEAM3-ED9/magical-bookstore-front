@@ -9,7 +9,7 @@ export default function BookSearch({ setSearch }) {
   }, [searchTerm])
 
   return (
-    <div className="mb-4 p-4 bg-[#5D4037] rounded-lg shadow-xl">
+    <div className="mb-4 p-4 bg-shelf rounded-lg shadow-xl">
       <h2 className="text-2xl font-bold mb-4">Search a book</h2>
       <input
         type="text"

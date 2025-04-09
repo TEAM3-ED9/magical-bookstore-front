@@ -25,6 +25,7 @@ body {
 }
 
 @theme {
+  --color-shelf: #5d4037;
   --color-book: #6e5b3e;
   --color-accent: #946b2d;
   --color-dark: #0e1a40;
