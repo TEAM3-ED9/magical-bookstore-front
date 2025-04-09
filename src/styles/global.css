@@ -19,6 +19,9 @@ body {
     inset: 0 0 0 1px rgba(255, 255, 255, 0.05), inset 4px,
       0 0 0 var(--color-accent) 99 2px 2px 4px rgb(0, 0, 0, 0.5);
   }
+  .book-spine-bg {
+    background-color: color-mix(in srgb, var(--color-book) 100%, black 15%);
+  }
 }
 
 @theme {

@@ -1,21 +1,7 @@
-import { cn } from "@/lib/utils"
-
 export default function BookSpine({ book, onMouseEnter, onMouseLeave }) {
   return (
     <div
-<<<<<<< HEAD
-      className="h-[220px] w-full rounded-sm cursor-pointer transition-all duration-300 hover:translate-y-[-5px] relative group overflow-hidden"
-=======
-      className={cn(
-        "h-[280px] w-full rounded-sm cursor-pointer transition-all duration-300",
-        "hover:-translate-y-1 relative group overflow-hidden",
-        "book-spine"
-      )}
->>>>>>> e941056 (feat: moved colors vars to css)
-      style={{
-        backgroundColor:
-          "color-mix(in srgb, var(--color-book) 100%, black 15%)",
-      }}
+      className="h-[280px] w-full rounded-sm cursor-pointer transition-all duration-300 hover:-translate-y-1 relative group overflow-hidden book-spine book-spine-bg"
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
