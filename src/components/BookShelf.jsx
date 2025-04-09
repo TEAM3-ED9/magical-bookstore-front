@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import BookSpine from "@/components/BookSpine"
 import BookPopup from "@/components/BookPopup"
 import BookSearch from "@/components/molecules/BookSearch"
@@ -10,50 +10,81 @@ import RequestLoader from "./molecules/RequestLoader"
 import SearchBooksLoader from "./molecules/SearchBooksLoader"
 import BooksNotFound from "./molecules/BooksNotFound"
 
-const queryUrl = `${BACKEND_URL}/books`
+const BOOKS_URL = `${BACKEND_URL}/books`
+const TITLE_SEARCH_URL = `${BACKEND_URL}/books/title`
+const AUTHOR_SEARCH_URL = `${BACKEND_URL}/books/author`
 
-/**
- * TODO
- *
- * Fix error when the query belongs to title or author and the other query fails
- */
 export default function BookShelf() {
   const [searchTerm, setSearchTerm] = useState("")
   const [activeBook, setActiveBook] = useState(null)
-  const [filteredBooks, setFilteredBooks] = useState([])
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 })
+  const [finalRetry, setFinalRetry] = useState(false)
 
   const {
     data: booksData,
     error: booksError,
     isLoading: booksLoading,
-  } = useSWR(queryUrl, fetcher, {
-    errorRetryInterval: 5000,
+  } = useSWR(BOOKS_URL, fetcher, {
+    errorRetryInterval: 3000,
+    onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
+      if (retryCount >= 5) {
+        if (!finalRetry) setFinalRetry(true)
+        return
+      }
+      setTimeout(() => revalidate({ retryCount }), 5000)
+    },
   })
 
-  const search = searchTerm.toLowerCase()
-  const authorQuery = `${queryUrl}/author?author=${search}`
-  const titleQuery = `${queryUrl}/title?title=${search}`
+  const searchQueries = useMemo(() => {
+    if (!searchTerm) return null
+    return [
+      `${TITLE_SEARCH_URL}?title=${encodeURIComponent(searchTerm)}`,
+      `${AUTHOR_SEARCH_URL}?author=${encodeURIComponent(searchTerm)}`,
+    ]
+  }, [searchTerm])
 
   const {
-    data: booksFilteredByAuthorData,
-    error: authorError,
-    isLoading: authorLoading,
-  } = useSWR(search ? authorQuery : null, fetcher, {
-    errorRetryInterval: 5000,
-  })
+    data: searchResults,
+    error: searchError,
+    isLoading: isSearching,
+  } = useSWR(
+    searchQueries,
+    (urls) => Promise.all(urls.map((url) => fetcher(url))),
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      errorRetryCount: 3,
+    }
+  )
 
-  const {
-    data: booksFilteredByTitleData,
-    error: titleError,
-    isLoading: titleLoading,
-  } = useSWR(search ? titleQuery : null, fetcher, {
-    errorRetryInterval: 5000,
-  })
-
-  const hasError = booksError || authorError || titleError
+  const hasError = booksError || searchError
   const isLoading = booksLoading
-  const isLoadingBooks = titleLoading || authorLoading
+  const isLoadingBooks = isSearching
+
+  const displayedBooks = useMemo(() => {
+    if (!booksData) return []
+    if (!searchTerm) return booksData
+    if (!searchResults) return []
+
+    const validResults = searchResults.flat().filter((result) => {
+      return (
+        result &&
+        typeof result === "object" &&
+        result.id &&
+        result.title &&
+        result.author
+      )
+    })
+
+    const uniqueResultsMap = new Map()
+    validResults.forEach((book) => {
+      if (!uniqueResultsMap.has(book.id)) {
+        uniqueResultsMap.set(book.id, book)
+      }
+    })
+
+    return Array.from(uniqueResultsMap.values())
+  }, [booksData, searchTerm, searchResults])
 
   const activeBookData = useMemo(() => {
     if (!booksData || !activeBook) return null
@@ -62,7 +93,6 @@ export default function BookShelf() {
 
   const handleBookHover = useCallback((id, e) => {
     const rect = e.currentTarget.getBoundingClientRect()
-
     setActiveBook(id)
     setPopupPosition({
       x: rect.left + rect.width / 2,
@@ -70,42 +100,10 @@ export default function BookShelf() {
     })
   }, [])
 
-  const handleBookLeave = () => {
-    setActiveBook(null)
-  }
-
-  useEffect(() => {
-    if (!searchTerm) {
-      setFilteredBooks(booksData || [])
-      return
-    }
-
-    const validAuthorResults = Array.isArray(booksFilteredByAuthorData)
-      ? booksFilteredByAuthorData
-      : []
-
-    const validTitleResults = Array.isArray(booksFilteredByTitleData)
-      ? booksFilteredByTitleData
-      : []
-
-    const combinedResults = [...validAuthorResults, ...validTitleResults]
-
-    const uniqueResults = [
-      ...new Map(combinedResults.map((book) => [book.id, book])).values(),
-    ]
-
-    setFilteredBooks(uniqueResults)
-  }, [
-    searchTerm,
-    booksData,
-    booksFilteredByAuthorData,
-    booksFilteredByTitleData,
-  ])
-
   return (
     <div className="relative min-h-[calc(100vh-16rem)]">
       {hasError ? (
-        <ErrorLoader />
+        <ErrorLoader finalRetry={finalRetry} />
       ) : isLoading ? (
         <RequestLoader />
       ) : (
@@ -115,22 +113,21 @@ export default function BookShelf() {
             <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-1 md:gap-2">
               {isLoadingBooks ? (
                 <SearchBooksLoader />
-              ) : filteredBooks.length === 0 ? (
+              ) : displayedBooks.length === 0 ? (
                 <BooksNotFound />
               ) : (
-                filteredBooks?.length > 0 &&
-                filteredBooks.map((book) => (
+                displayedBooks.map((book) => (
                   <BookSpine
                     key={book.id}
                     book={book}
                     onMouseEnter={(e) => handleBookHover(book.id, e)}
-                    onMouseLeave={handleBookLeave}
+                    onMouseLeave={() => setActiveBook(null)}
                   />
                 ))
               )}
             </div>
           </div>
-          {activeBook !== null && activeBookData && (
+          {activeBookData && (
             <BookPopup
               book={activeBookData}
               position={popupPosition}
