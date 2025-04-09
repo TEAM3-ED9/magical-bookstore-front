@@ -8,6 +8,26 @@ export default function BookPopup({ book, position }) {
     setIsVisible(true)
     return () => setIsVisible(false)
   }, [book.id])
+  const isMobile = window.innerWidth <= 768
+  const arrowPosition = (position) => {
+    const { x } = position
+
+    if (isMobile) {
+      if (x <= 150) {
+        return "left-[15%] translate-x-[-15%]"
+      }
+
+      if (x >= 150 && x <= 260) {
+        return "left-[50%] translate-x-[-50%]"
+      }
+
+      if (x >= 261) {
+        return "right-[15%] translate-x-[15%]"
+      }
+    } else {
+      return "left-1/2 -translate-x-1/2"
+    }
+  }
 
   return (
     <div
@@ -16,14 +36,18 @@ export default function BookPopup({ book, position }) {
     >
       <div
         className={cn(
-          "w-64 rounded-lg p-4 book-popup",
-          "transition-all duration-300",
-          "border-2 border-accent bg-dark",
-          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
-          "before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2",
-          "before:border-8 before:border-transparent before:border-t-accent"
+          "w-64 rounded-lg p-4 book-popup transition-all duration-300 border-2 border-accent bg-dark ",
+          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
         )}
       >
+        <div
+          className={`absolute top-full border-8 border-transparent border-t-accent ${arrowPosition(
+            position
+          )}`}
+          style={{
+            content: '""',
+          }}
+        ></div>
         <div className="absolute inset-0 overflow-hidden rounded-lg">
           <div className="absolute inset-0 bg-[url('/placeholder.svg')] opacity-20 mix-blend-overlay" />
           <div className="absolute inset-0 mix-blend-overlay" />

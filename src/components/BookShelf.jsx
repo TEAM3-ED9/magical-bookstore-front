@@ -93,11 +93,31 @@ export default function BookShelf() {
 
   const handleBookHover = useCallback((id, e) => {
     const rect = e.currentTarget.getBoundingClientRect()
+    const popupWidth = 200
+    const popupHeight = 200
+    const margin = 10
+
+    const windowWidth = window.innerWidth
+    const windowHeight = window.innerHeight
+
+    let x = rect.left + rect.width / 2
+
+    if (x - popupWidth / 2 < margin) {
+      x = margin + popupWidth / 1.5
+    } else if (x + popupWidth / 2 > windowWidth - margin) {
+      x = windowWidth - margin - popupWidth / 1.5
+    }
+
+    if (y < margin) {
+      y = rect.bottom + 10
+
+      if (y + popupHeight > windowHeight - margin) {
+        y = windowHeight - popupHeight - margin
+      }
+    }
+
     setActiveBook(id)
-    setPopupPosition({
-      x: rect.left + rect.width / 2,
-      y: rect.top - 10,
-    })
+    setPopupPosition({ x, y })
   }, [])
 
   return (
