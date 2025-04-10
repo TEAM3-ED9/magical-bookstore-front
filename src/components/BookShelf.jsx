@@ -101,6 +101,7 @@ export default function BookShelf() {
     const windowHeight = window.innerHeight
 
     let x = rect.left + rect.width / 2
+    let y = rect.top / 3
 
     if (x - popupWidth / 2 < margin) {
       x = margin + popupWidth / 1.5
