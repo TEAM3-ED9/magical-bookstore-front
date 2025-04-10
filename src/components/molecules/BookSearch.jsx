@@ -15,7 +15,7 @@ export default function BookSearch({ setSearch }) {
         type="text"
         className="w-full p-2 border border-gray-300 rounded-md"
         placeholder="Search by title or author..."
-        value={searchTerm}
+        value={searchTerm ?? ""}
         onChange={(e) => setSearchTerm(e.target.value)}
       />
     </div>

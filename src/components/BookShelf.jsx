@@ -31,7 +31,7 @@ export default function BookShelf() {
     errorRetryInterval: 5000,
   })
 
-  const search = searchTerm.toLowerCase()
+  const search = searchTerm?.toLowerCase() ?? ""
   const authorQuery = `${queryUrl}/author?author=${search}`
   const titleQuery = `${queryUrl}/title?title=${search}`
 
