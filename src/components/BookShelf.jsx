@@ -1,45 +1,55 @@
-import { useCallback, useMemo, useState } from "react"
-import BookSpine from "@/components/BookSpine"
-import BookPopup from "@/components/BookPopup"
-import BookSearch from "@/components/molecules/BookSearch"
+import { useMemo, useState } from "react"
 import useSWR from "swr"
+import BookSpine from "@/components/BookSpine"
+import BookSearch from "@/components/molecules/BookSearch"
 import { BACKEND_URL } from "@/lib/constants"
 import { fetcher } from "@/lib/utils"
 import ErrorLoader from "./molecules/ErrorLoader"
 import RequestLoader from "./molecules/RequestLoader"
 import SearchBooksLoader from "./molecules/SearchBooksLoader"
 import BooksNotFound from "./molecules/BooksNotFound"
+import BookModal from "./BookModal"
 
-const BOOKS_URL = `${BACKEND_URL}/books`
-const TITLE_SEARCH_URL = `${BACKEND_URL}/books/title`
-const AUTHOR_SEARCH_URL = `${BACKEND_URL}/books/author`
+/**
+ * TODO
+ * Fix error when the query belongs to title or author and the other query fails
+ */
+
+const API_ENDPOINTS = {
+  BOOKS: `${BACKEND_URL}/books`,
+  TITLE_SEARCH: `${BACKEND_URL}/books/title`,
+  AUTHOR_SEARCH: `${BACKEND_URL}/books/author`,
+}
+
+const SWR_OPTIONS = {
+  errorRetryInterval: 3000,
+  onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
+    if (retryCount >= 5) return
+    setTimeout(() => revalidate({ retryCount }), 5000)
+  },
+}
+
+const SEARCH_SWR_OPTIONS = {
+  revalidateIfStale: false,
+  revalidateOnFocus: false,
+  errorRetryCount: 3,
+}
 
 export default function BookShelf() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [activeBook, setActiveBook] = useState(null)
-  const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 })
-  const [finalRetry, setFinalRetry] = useState(false)
+  const [activeBookId, setActiveBookId] = useState(null)
 
   const {
     data: booksData,
     error: booksError,
-    isLoading: booksLoading,
-  } = useSWR(BOOKS_URL, fetcher, {
-    errorRetryInterval: 3000,
-    onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
-      if (retryCount >= 5) {
-        if (!finalRetry) setFinalRetry(true)
-        return
-      }
-      setTimeout(() => revalidate({ retryCount }), 5000)
-    },
-  })
+    isLoading: isBooksLoading,
+  } = useSWR(API_ENDPOINTS.BOOKS, fetcher, SWR_OPTIONS)
 
   const searchQueries = useMemo(() => {
-    if (!searchTerm) return null
+    if (!searchTerm.trim()) return null
     return [
-      `${TITLE_SEARCH_URL}?title=${encodeURIComponent(searchTerm)}`,
-      `${AUTHOR_SEARCH_URL}?author=${encodeURIComponent(searchTerm)}`,
+      `${API_ENDPOINTS.TITLE_SEARCH}?title=${encodeURIComponent(searchTerm)}`,
+      `${API_ENDPOINTS.AUTHOR_SEARCH}?author=${encodeURIComponent(searchTerm)}`,
     ]
   }, [searchTerm])
 
@@ -49,114 +59,75 @@ export default function BookShelf() {
     isLoading: isSearching,
   } = useSWR(
     searchQueries,
-    (urls) => Promise.all(urls.map((url) => fetcher(url))),
-    {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      errorRetryCount: 3,
-    }
+    (urls) => Promise.all(urls.map(fetcher)),
+    SEARCH_SWR_OPTIONS
   )
-
-  const hasError = booksError || searchError
-  const isLoading = booksLoading
-  const isLoadingBooks = isSearching
 
   const displayedBooks = useMemo(() => {
     if (!booksData) return []
-    if (!searchTerm) return booksData
+    if (!searchTerm.trim()) return booksData
     if (!searchResults) return []
 
-    const validResults = searchResults.flat().filter((result) => {
-      return (
-        result &&
-        typeof result === "object" &&
-        result.id &&
-        result.title &&
-        result.author
-      )
-    })
-
-    const uniqueResultsMap = new Map()
-    validResults.forEach((book) => {
-      if (!uniqueResultsMap.has(book.id)) {
-        uniqueResultsMap.set(book.id, book)
-      }
-    })
-
-    return Array.from(uniqueResultsMap.values())
+    // Process and deduplicate search results
+    return searchResults
+      .flat()
+      .filter((result) => result?.id && result?.title && result?.author)
+      .reduce((uniqueBooks, book) => {
+        if (!uniqueBooks.some((b) => b.id === book.id)) {
+          uniqueBooks.push(book)
+        }
+        return uniqueBooks
+      }, [])
   }, [booksData, searchTerm, searchResults])
 
   const activeBookData = useMemo(() => {
-    if (!booksData || !activeBook) return null
-    return booksData.find((b) => b.id === activeBook)
-  }, [booksData, activeBook])
+    if (!booksData || !activeBookId) return null
+    return booksData.find((book) => book.id === activeBookId)
+  }, [booksData, activeBookId])
 
-  const handleBookHover = useCallback((id, e) => {
-    const rect = e.currentTarget.getBoundingClientRect()
-    const popupWidth = 200
-    const popupHeight = 200
-    const margin = 10
+  const handleBookClick = (bookId) => {
+    setActiveBookId(bookId)
+  }
 
-    const windowWidth = window.innerWidth
-    const windowHeight = window.innerHeight
+  const handleCloseModal = () => {
+    setActiveBookId(null)
+  }
 
-    let x = rect.left + rect.width / 2
-    let y = rect.top / 3
+  if (booksError || searchError) {
+    return <ErrorLoader />
+  }
 
-    if (x - popupWidth / 2 < margin) {
-      x = margin + popupWidth / 1.5
-    } else if (x + popupWidth / 2 > windowWidth - margin) {
-      x = windowWidth - margin - popupWidth / 1.5
-    }
-
-    if (y < margin) {
-      y = rect.bottom + 10
-
-      if (y + popupHeight > windowHeight - margin) {
-        y = windowHeight - popupHeight - margin
-      }
-    }
-
-    setActiveBook(id)
-    setPopupPosition({ x, y })
-  }, [])
+  if (isBooksLoading) {
+    return <RequestLoader />
+  }
 
   return (
     <div className="relative min-h-[calc(100vh-16rem)] p-4 overflow-y-auto">
-      {hasError ? (
-        <ErrorLoader finalRetry={finalRetry} />
-      ) : isLoading ? (
-        <RequestLoader />
-      ) : (
-        <>
-          <BookSearch setSearch={setSearchTerm} />
-          <div className="bg-shelf p-4 rounded-lg shadow-xl">
-            <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-1 md:gap-2">
-              {isLoadingBooks ? (
-                <SearchBooksLoader />
-              ) : displayedBooks.length === 0 ? (
-                <BooksNotFound />
-              ) : (
-                displayedBooks.map((book) => (
-                  <BookSpine
-                    key={book.id}
-                    book={book}
-                    onMouseEnter={(e) => handleBookHover(book.id, e)}
-                    onMouseLeave={() => setActiveBook(null)}
-                  />
-                ))
-              )}
-            </div>
-          </div>
-          {activeBookData && (
-            <BookPopup
-              book={activeBookData}
-              position={popupPosition}
-              unlocked={activeBookData.status === 0}
-            />
+      <BookSearch onSearch={setSearchTerm} />
+
+      <div className="bg-shelf p-4 rounded-lg shadow-xl">
+        <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-1 md:gap-2">
+          {isSearching ? (
+            <SearchBooksLoader />
+          ) : displayedBooks.length === 0 ? (
+            <BooksNotFound />
+          ) : (
+            displayedBooks.map((book) => (
+              <BookSpine
+                key={book.id}
+                book={book}
+                onClick={handleBookClick}
+              />
+            ))
           )}
-        </>
-      )}
+        </div>
+      </div>
+
+      <BookModal
+        isOpen={Boolean(activeBookData)}
+        book={activeBookData}
+        onClose={handleCloseModal}
+      />
     </div>
   )
 }

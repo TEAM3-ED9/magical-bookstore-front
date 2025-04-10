@@ -1,4 +1,4 @@
-export default function BookSpine({ book, onMouseEnter, onMouseLeave }) {
+export default function BookSpine({ book, onClick }) {
   return (
     <div
       className="h-[280px] w-full rounded-sm cursor-pointer transition-all duration-300 hover:-translate-y-1 relative group overflow-hidden book-spine"
@@ -7,8 +7,7 @@ export default function BookSpine({ book, onMouseEnter, onMouseLeave }) {
           book.status === 0 ? "85%" : "5%"
         }, black 55%)`,
       }}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
+      onClick={() => onClick(book.id)}
     >
       <div className="absolute inset-0 bg-[url('/placeholder.svg')] opacity-20 mix-blend-overlay" />
       <div className="absolute inset-0 bg-gradient-to-br from-black/20 via-transparent to-black/30" />
