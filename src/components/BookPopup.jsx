@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 
-export default function BookPopup({ book, position }) {
+export default function BookPopup({ book, position, unlocked }) {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
@@ -32,7 +32,10 @@ export default function BookPopup({ book, position }) {
   return (
     <div
       className="fixed z-50 -translate-x-1/2 pointer-events-none"
-      style={{ left: `${position.x}px`, top: `${position.y}px` }}
+      style={{
+        left: `${position.x}px`,
+        top: `${position.y * (unlocked ? 1 : 2.5)}px`,
+      }}
     >
       <div
         className={cn(
@@ -55,23 +58,31 @@ export default function BookPopup({ book, position }) {
         </div>
 
         <div className="relative">
-          <div className="inline-block px-2 py-1 rounded text-xs font-bold mb-2 bg-accent text-dark">
-            {book.house}
-          </div>
+          {unlocked ? (
+            <>
+              <div className="inline-block px-2 py-1 rounded text-xs font-bold mb-2 bg-accent text-dark">
+                {book.house}
+              </div>
 
-          <h3 className="font-serif text-lg font-bold mb-1 text-accent">
-            {book.title}
-          </h3>
-          <p className="text-white/80 text-sm mb-1">Por {book.author}</p>
+              <h3 className="font-serif text-lg font-bold mb-1 text-accent">
+                {book.title}
+              </h3>
+              <p className="text-white/80 text-sm mb-1">Por {book.author}</p>
 
-          <div className="h-px bg-gradient-to-r from-transparent via-white/40 to-transparent my-2" />
+              <div className="h-px bg-gradient-to-r from-transparent via-white/40 to-transparent my-2" />
 
-          <p className="text-white/90 text-sm italic">{book.description}</p>
+              <p className="text-white/90 text-sm italic">{book.description}</p>
 
-          <div className="absolute -top-2 -right-2 size-8">
-            <div className="absolute inset-0 rounded-full animate-ping bg-accent/20" />
-            <div className="absolute inset-1 rounded-full animate-pulse bg-accent/40" />
-          </div>
+              <div className="absolute -top-2 -right-2 size-8">
+                <div className="absolute inset-0 rounded-full animate-ping bg-accent/20" />
+                <div className="absolute inset-1 rounded-full animate-pulse bg-accent/40" />
+              </div>
+            </>
+          ) : (
+            <p className="text-white/80 text-sm mb-1">
+              You must unlock this book before to read it...
+            </p>
+          )}
         </div>
       </div>
     </div>

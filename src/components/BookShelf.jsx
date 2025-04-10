@@ -152,6 +152,7 @@ export default function BookShelf() {
             <BookPopup
               book={activeBookData}
               position={popupPosition}
+              unlocked={activeBookData.status === 0}
             />
           )}
         </>

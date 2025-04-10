@@ -1,7 +1,12 @@
 export default function BookSpine({ book, onMouseEnter, onMouseLeave }) {
   return (
     <div
-      className="h-[280px] w-full rounded-sm cursor-pointer transition-all duration-300 hover:-translate-y-1 relative group overflow-hidden book-spine book-spine-bg"
+      className="h-[280px] w-full rounded-sm cursor-pointer transition-all duration-300 hover:-translate-y-1 relative group overflow-hidden book-spine"
+      style={{
+        backgroundColor: `color-mix(in srgb, var(--color-book) ${
+          book.status === 0 ? "85%" : "5%"
+        }, black 55%)`,
+      }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
