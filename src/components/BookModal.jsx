@@ -52,7 +52,7 @@ export default function BookModal({ isOpen, onClose, book }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.9, ease: "easeInOut" }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
           key="modal-container"
         >
           {/* Overlay */}
@@ -81,7 +81,7 @@ export default function BookModal({ isOpen, onClose, book }) {
               scale: 0.8,
               y: 50,
               opacity: 0,
-              transition: { duration: 0.5, ease: "easeInOut" },
+              transition: { duration: 0.3, ease: "easeInOut" },
             }}
           >
             <motion.div
@@ -96,7 +96,7 @@ export default function BookModal({ isOpen, onClose, book }) {
               animate={{ rotateX: 0, rotateY: 0 }}
               exit={{
                 rotateX: 30,
-                transition: { duration: 0.6, ease: "easeIn" },
+                transition: { duration: 0.3, ease: "easeIn" },
               }}
             >
               <div
@@ -111,7 +111,7 @@ export default function BookModal({ isOpen, onClose, book }) {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: 0.3 }}
                 >
                   {/* Left Page */}
                   <motion.div
