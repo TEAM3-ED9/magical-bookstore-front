@@ -1,26 +1,17 @@
-import { cn } from "@/lib/utils"
-import { BOOK_COLOR } from "@/lib/constants"
+import { cn } from "../lib/utils"
+import { DARK_COLOR } from "../lib/constants"
 
-export default function BookSpine({ book, onMouseEnter, onMouseLeave }) {
-  const darkenedColor = BOOK_COLOR.replace(/[0-9a-f]{2}/g, (hex) => {
-    const num = Number.parseInt(hex, 16)
-    const darkened = Math.max(0, num - 40)
-      .toString(16)
-      .padStart(2, "0")
-    return darkened
-  })
-
+export default function BookSpine({ book, onClick }) {
   return (
     <div
       className="h-[220px] w-full rounded-sm cursor-pointer transition-all duration-300 hover:translate-y-[-5px] relative group overflow-hidden"
       style={{
-        backgroundColor: darkenedColor,
+        backgroundColor: DARK_COLOR,
         boxShadow: `inset 0 0 0 1px rgba(255,255,255,0.05), 
                     inset 4px 0 0 0 ${book.accent}99,
                     2px 2px 4px rgba(0,0,0,0.5)`,
       }}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
+      onClick={() => onClick(book.id)}
     >
       <div className="absolute inset-0 bg-[url('/placeholder.svg?height=100&width=30')] opacity-20 mix-blend-overlay" />
 

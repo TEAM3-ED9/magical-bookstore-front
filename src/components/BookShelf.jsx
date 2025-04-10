@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import BookSpine from "@/components/BookSpine"
-import BookPopup from "@/components/BookPopup"
 import BookSearch from "@/components/molecules/BookSearch"
 import useSWR from "swr"
 import { BACKEND_URL } from "@/lib/constants"
@@ -9,6 +8,7 @@ import ErrorLoader from "./molecules/ErrorLoader"
 import RequestLoader from "./molecules/RequestLoader"
 import SearchBooksLoader from "./molecules/SearchBooksLoader"
 import BooksNotFound from "./molecules/BooksNotFound"
+import BookModal from "./BookModal"
 
 const queryUrl = `${BACKEND_URL}/books`
 
@@ -20,8 +20,12 @@ const queryUrl = `${BACKEND_URL}/books`
 export default function BookShelf() {
   const [searchTerm, setSearchTerm] = useState("")
   const [activeBook, setActiveBook] = useState(null)
+  const [modalIsOpen, setModalIsOpen] = useState(false)
   const [filteredBooks, setFilteredBooks] = useState([])
-  const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 })
+
+  const handleClick = (bookId) => {
+    setActiveBook(bookId)
+  }
 
   const {
     data: booksData,
@@ -60,20 +64,6 @@ export default function BookShelf() {
     return booksData.find((b) => b.id === activeBook)
   }, [booksData, activeBook])
 
-  const handleBookHover = useCallback((id, e) => {
-    const rect = e.currentTarget.getBoundingClientRect()
-
-    setActiveBook(id)
-    setPopupPosition({
-      x: rect.left + rect.width / 2,
-      y: rect.top - 10,
-    })
-  }, [])
-
-  const handleBookLeave = () => {
-    setActiveBook(null)
-  }
-
   useEffect(() => {
     if (!searchTerm) {
       setFilteredBooks(booksData || [])
@@ -102,6 +92,10 @@ export default function BookShelf() {
     booksFilteredByTitleData,
   ])
 
+  useEffect(() => {
+    if (activeBook) setModalIsOpen(true)
+  }, [activeBook])
+
   return (
     <div className="relative min-h-[calc(100vh-16rem)]">
       {hasError ? (
@@ -123,19 +117,20 @@ export default function BookShelf() {
                   <BookSpine
                     key={book.id}
                     book={book}
-                    onMouseEnter={(e) => handleBookHover(book.id, e)}
-                    onMouseLeave={handleBookLeave}
+                    onClick={handleClick}
                   />
                 ))
               )}
             </div>
           </div>
-          {activeBook !== null && activeBookData && (
-            <BookPopup
-              book={activeBookData}
-              position={popupPosition}
-            />
-          )}
+          <BookModal
+            isOpen={!!activeBookData}
+            book={activeBookData}
+            onClose={() => {
+              setModalIsOpen(false)
+              setActiveBook(null)
+            }}
+          />
         </>
       )}
     </div>
