@@ -31,6 +31,8 @@ body {
   --color-dark: #0e1a40;
   --color-background: 222.2 84% 4.9%;
   --color-foreground: 210 40% 98%;
+  --color-title: #d4af37;
+  --color-description: #f0f0f0;
 }
 
 @layer base {

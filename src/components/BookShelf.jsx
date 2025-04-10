@@ -122,7 +122,7 @@ export default function BookShelf() {
   }, [])
 
   return (
-    <div className="relative min-h-[calc(100vh-16rem)]">
+    <div className="relative min-h-[calc(100vh-16rem)] p-4">
       {hasError ? (
         <ErrorLoader finalRetry={finalRetry} />
       ) : isLoading ? (
