@@ -2,20 +2,23 @@ import Bookshelf from "@/components/BookShelf"
 
 export default function App() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#0A0A0A] to-[#1A1A1A] p-4 md:p-8 bg-[url(/public/background.webp)] bg-cover text-white">
-      <div className="fixed w-full inset-0 bg-black/30 backdrop-blur-sm z-50">
-        <div className="max-w-7xl mx-auto">
-          <header className="p-6 sm:p-0 sm:pt-8 text-center sm:mb-6">
+    <div className="relative">
+      <div className="fixed inset-0 bg-[url(/background.webp)] bg-cover" />
+      <div className="fixed inset-0 bg-black/10 backdrop-blur-sm" />
+      <main className="relative min-h-screen text-white z-10 overflow-y-auto">
+        <div className="max-w-7xl mx-auto p-2 md:p-4">
+          <header className="p-4 sm:p-0 sm:pt-2 text-center sm:mb-4">
             <h1 className="text-4xl md:text-5xl font-serif text-title sm:text-title/80 mb-2">
               The Atrio of Rowena
             </h1>
             <p className="text-description sm:text-description/70 text-lg italic">
-              Colections of old magic books of four house of the Atrio of Rowena
+              Collections of old magic books of four houses of the Atrio of
+              Rowena
             </p>
           </header>
           <Bookshelf />
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   )
 }
