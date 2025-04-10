@@ -1,12 +1,12 @@
 import { usePhraseCycle } from "../../hooks/usePhraseCycle"
 
-export default function ErrorLoader() {
+export default function ErrorLoader({ finalRetry }) {
   const errorPhrases = [
-    "¡Oh no! A dementor has attacked the library...",
-    "¡Expecto Patronum! Containing the dementor...",
-    "¡Reparo! Repairing magic vulnerabilities...",
-    "¡Tempus Renovato! Recharging magical time...",
-    "¡Anapneo! Clearing old spells...",
+    "Oh no! A dementor has attacked the library...",
+    "Expecto Patronum! Containing the dementor...",
+    "Reparo! Repairing magic vulnerabilities...",
+    "Tempus Renovato! Recharging magical time...",
+    "Anapneo! Clearing old spells...",
   ]
   const phrases = usePhraseCycle(errorPhrases)
 
@@ -20,7 +20,9 @@ export default function ErrorLoader() {
         />
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="w-full text-lg bg-black/70 text-center font-bold text-white mt-8 p-4 backdrop-blur-sm">
-            {phrases}
+            {!finalRetry && phrases}
+            {finalRetry &&
+              "Oh no! A dementor has broken our spell... We can't find the books..."}
           </div>
         </div>
       </div>

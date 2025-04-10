@@ -12,6 +12,24 @@ body {
     writing-mode: vertical-lr;
     text-orientation: mixed;
   }
+  .book-popup {
+    box-shadow: 0 10px 25px var(--color-dark);
+  }
+  .book-spine {
+    inset: 0 0 0 1px rgba(255, 255, 255, 0.05), inset 4px,
+      0 0 0 var(--color-accent) 99 2px 2px 4px rgb(0, 0, 0, 0.5);
+  }
+}
+
+@theme {
+  --color-shelf: #5d4037;
+  --color-book: #6e5b3e;
+  --color-accent: #946b2d;
+  --color-dark: #0e1a40;
+  --color-background: 222.2 84% 4.9%;
+  --color-foreground: 210 40% 98%;
+  --color-title: #d4af37;
+  --color-description: #f0f0f0;
 }
 
 @layer base {
