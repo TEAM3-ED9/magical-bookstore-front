@@ -27,7 +27,7 @@ body {
   }
 }
 
-/*@theme {
+@theme {
   --color-shelf: #5d4037;
   --color-book: #6e5b3e;
   --color-accent: #946b2d;
@@ -36,7 +36,7 @@ body {
   --color-foreground: 210 40% 98%;
   --color-title: #d4af37;
   --color-description: #f0f0f0;
-}*/
+}
 
 @layer base {
   :root {
