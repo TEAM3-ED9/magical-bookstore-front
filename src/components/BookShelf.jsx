@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import useSWR from "swr"
 import BookSpine from "@/components/BookSpine"
 import BookSearch from "@/components/molecules/BookSearch"
@@ -8,6 +8,7 @@ import ErrorLoader from "./molecules/ErrorLoader"
 import RequestLoader from "./molecules/RequestLoader"
 import SearchBooksLoader from "./molecules/SearchBooksLoader"
 import BooksNotFound from "./molecules/BooksNotFound"
+import { useDebounce } from "../hooks/useDebounce"
 import BookModal from "./BookModal"
 
 /**
@@ -38,6 +39,7 @@ const SEARCH_SWR_OPTIONS = {
 export default function BookShelf() {
   const [searchTerm, setSearchTerm] = useState("")
   const [activeBookId, setActiveBookId] = useState(null)
+  const debouncedSearchTerm = useDebounce(searchTerm, 500)
 
   const {
     data: booksData,
@@ -46,12 +48,12 @@ export default function BookShelf() {
   } = useSWR(API_ENDPOINTS.BOOKS, fetcher, SWR_OPTIONS)
 
   const searchQueries = useMemo(() => {
-    if (!searchTerm.trim()) return null
+    if (!debouncedSearchTerm) return null
     return [
-      `${API_ENDPOINTS.TITLE_SEARCH}?title=${encodeURIComponent(searchTerm)}`,
-      `${API_ENDPOINTS.AUTHOR_SEARCH}?author=${encodeURIComponent(searchTerm)}`,
+      `${API_ENDPOINTS.TITLE_SEARCH}?title=${encodeURIComponent(debouncedSearchTerm)}`,
+      `${API_ENDPOINTS.AUTHOR_SEARCH}?author=${encodeURIComponent(debouncedSearchTerm)}`,
     ]
-  }, [searchTerm])
+  }, [debouncedSearchTerm])
 
   const {
     data: searchResults,
@@ -65,7 +67,7 @@ export default function BookShelf() {
 
   const displayedBooks = useMemo(() => {
     if (!booksData) return []
-    if (!searchTerm.trim()) return booksData
+    if (!debouncedSearchTerm) return booksData
     if (!searchResults) return []
 
     // Process and deduplicate search results
@@ -78,7 +80,7 @@ export default function BookShelf() {
         }
         return uniqueBooks
       }, [])
-  }, [booksData, searchTerm, searchResults])
+  }, [booksData, debouncedSearchTerm, searchResults])
 
   const activeBookData = useMemo(() => {
     if (!booksData || !activeBookId) return null

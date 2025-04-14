@@ -1,12 +1,7 @@
 import { useQueryState } from "nuqs"
-import { useEffect } from "react"
 
 export default function BookSearch({ onSearch }) {
   const [searchTerm, setSearchTerm] = useQueryState("search")
-
-  useEffect(() => {
-    onSearch(searchTerm)
-  }, [searchTerm])
 
   return (
     <div className="mb-4 p-4 bg-shelf rounded-lg shadow-xl">
@@ -16,7 +11,11 @@ export default function BookSearch({ onSearch }) {
         className="w-full py-2.5 rounded-xl px-5 bg-white/10 focus:bg-white/30 outline-0 border-none delay-75 transition-all duration-300 placeholder:text-white/50 hover:bg-white/30"
         placeholder="Search by title or author..."
         value={searchTerm ?? ""}
-        onChange={(e) => setSearchTerm(e.target.value)}
+        onChange={(e) => {
+          const value = e.target.value
+          setSearchTerm(value)
+          setSearch(value)
+        }}
       />
     </div>
   )
