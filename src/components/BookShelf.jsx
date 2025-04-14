@@ -1,116 +1,162 @@
-import { useState } from "react";
-import BookSpine from "@/components/BookSpine";
-import BookPopup from "@/components/BookPopup";
-import BookSearch from "@/components/molecules/BookSearch";
-import useSWR from "swr";
-import { BACKEND_URL, DURATION_MS } from "@/lib/constants"; // Import DURATION_MS también aquí
-import { fetcher } from "@/lib/utils";
-import { usePhraseCycle } from "../hooks/usePhraseCycle";
+import { useCallback, useMemo, useState } from "react"
+import BookSpine from "@/components/BookSpine"
+import BookPopup from "@/components/BookPopup"
+import BookSearch from "@/components/molecules/BookSearch"
+import useSWR from "swr"
+import { BACKEND_URL } from "@/lib/constants"
+import { fetcher } from "@/lib/utils"
+import ErrorLoader from "./molecules/ErrorLoader"
+import RequestLoader from "./molecules/RequestLoader"
+import SearchBooksLoader from "./molecules/SearchBooksLoader"
+import BooksNotFound from "./molecules/BooksNotFound"
 
-const loadingPhrases = [
-  "Analizando hechizos mágicos...",
-  "Decodificando diagramas mágicos...",
-  "Descubriendo entidades mágicas...",
-  "Conjurando hechizos de alto nivel...",
-  "Lanzando Wingardium Leviosa a los libros mágicos...",
-  "Bienvenido joven hechizero...",
-];
-
-const reloadErrorPhrases = [
-  "¡Oh no! Un dementor ha atacado la blioteca",
-  "¡Expecto Patronum! Conteniendo al dementor",
-  "¡Reparo! Reparando vulnerabilidades mágicas",
-  "¡Tempus Renovato! Recargando el tiempo mágico",
-  "¡Anapneo! Limpiando hechizos viejos",
-];
+const BOOKS_URL = `${BACKEND_URL}/books`
+const TITLE_SEARCH_URL = `${BACKEND_URL}/books/title`
+const AUTHOR_SEARCH_URL = `${BACKEND_URL}/books/author`
 
 export default function BookShelf() {
-  const [activeBook, setActiveBook] = useState(null);
-  const [filteredBooks, setFilteredBooks] = useState([]);
-  const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
+  const [searchTerm, setSearchTerm] = useState("")
+  const [activeBook, setActiveBook] = useState(null)
+  const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 })
+  const [finalRetry, setFinalRetry] = useState(false)
+
   const {
-    data: books,
-    error,
-    isLoading,
-  } = useSWR(`${BACKEND_URL}/books`, fetcher, { // ✅ CORRECCIÓN: Se añadió "/books" a la URL
-    errorRetryInterval: (DURATION_MS * 2) / reloadErrorPhrases.length,
-  });
-  const loadingPhrase = usePhraseCycle(loadingPhrases);
-  const reloadErrorPhrase = usePhraseCycle(reloadErrorPhrases);
+    data: booksData,
+    error: booksError,
+    isLoading: booksLoading,
+  } = useSWR(BOOKS_URL, fetcher, {
+    errorRetryInterval: 3000,
+    onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
+      if (retryCount >= 5) {
+        if (!finalRetry) setFinalRetry(true)
+        return
+      }
+      setTimeout(() => revalidate({ retryCount }), 5000)
+    },
+  })
 
-  const handleBookHover = (id, event) => {
-    const element = event;
-    const rect = element.currentTarget.getBoundingClientRect();
+  const searchQueries = useMemo(() => {
+    if (!searchTerm) return null
+    return [
+      `${TITLE_SEARCH_URL}?title=${encodeURIComponent(searchTerm)}`,
+      `${AUTHOR_SEARCH_URL}?author=${encodeURIComponent(searchTerm)}`,
+    ]
+  }, [searchTerm])
 
-    setActiveBook(id);
-    setPopupPosition({
-      x: rect.left + rect.width / 2,
-      y: rect.top - 10,
-    });
-  };
+  const {
+    data: searchResults,
+    error: searchError,
+    isLoading: isSearching,
+  } = useSWR(
+    searchQueries,
+    (urls) => Promise.all(urls.map((url) => fetcher(url))),
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      errorRetryCount: 3,
+    }
+  )
 
-  const handleBookLeave = () => {
-    setActiveBook(null);
-  };
+  const hasError = booksError || searchError
+  const isLoading = booksLoading
+  const isLoadingBooks = isSearching
+
+  const displayedBooks = useMemo(() => {
+    if (!booksData) return []
+    if (!searchTerm) return booksData
+    if (!searchResults) return []
+
+    const validResults = searchResults.flat().filter((result) => {
+      return (
+        result &&
+        typeof result === "object" &&
+        result.id &&
+        result.title &&
+        result.author
+      )
+    })
+
+    const uniqueResultsMap = new Map()
+    validResults.forEach((book) => {
+      if (!uniqueResultsMap.has(book.id)) {
+        uniqueResultsMap.set(book.id, book)
+      }
+    })
+
+    return Array.from(uniqueResultsMap.values())
+  }, [booksData, searchTerm, searchResults])
+
+  const activeBookData = useMemo(() => {
+    if (!booksData || !activeBook) return null
+    return booksData.find((b) => b.id === activeBook)
+  }, [booksData, activeBook])
+
+  const handleBookHover = useCallback((id, e) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const popupWidth = 200
+    const popupHeight = 200
+    const margin = 10
+
+    const windowWidth = window.innerWidth
+    const windowHeight = window.innerHeight
+
+    let x = rect.left + rect.width / 2
+    let y = rect.top / 3
+
+    if (x - popupWidth / 2 < margin) {
+      x = margin + popupWidth / 1.5
+    } else if (x + popupWidth / 2 > windowWidth - margin) {
+      x = windowWidth - margin - popupWidth / 1.5
+    }
+
+    if (y < margin) {
+      y = rect.bottom + 10
+
+      if (y + popupHeight > windowHeight - margin) {
+        y = windowHeight - popupHeight - margin
+      }
+    }
+
+    setActiveBook(id)
+    setPopupPosition({ x, y })
+  }, [])
 
   return (
-    <div className="relative min-h-[calc(100vh-16rem)]">
-      {!isLoading && error && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm z-50">
-          <div className="relative">
-            <img
-              src="/public/dementor.webp"
-              alt="Imágen de una varita lanzando un hechizo"
-              className="size-120 object-contain rounded-lg shadow-xl animate-pulse duration-900 delay-900 ease-in-out"
-            />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-full text-lg bg-black/70 text-center font-bold text-white mt-8 p-4 backdrop-blur-sm">
-                {reloadErrorPhrase}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      {isLoading && !error ? (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm z-50">
-          <div className="relative">
-            <img
-              src="/public/loading.webp"
-              alt="Imágen de una varita lanzando un hechizo"
-              className="size-120 object-contain rounded-lg shadow-xl animate-pulse duration-900 delay-900 ease-in-out"
-            />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-full text-lg bg-black/70 text-center font-bold text-white mt-8 p-4 backdrop-blur-sm">
-                {loadingPhrase}
-              </div>
-            </div>
-          </div>
-        </div>
+    <div className="relative min-h-[calc(100vh-16rem)] p-4 overflow-y-auto">
+      {hasError ? (
+        <ErrorLoader finalRetry={finalRetry} />
+      ) : isLoading ? (
+        <RequestLoader />
       ) : (
-        !error && books && ( // ✅ CORRECCIÓN: Añadida comprobación de 'books' antes de renderizar
-          <>
-            <BookSearch setFilteredBooks={setFilteredBooks} />
-            <div className="bg-[#5D4037] p-4 rounded-lg shadow-xl">
-              <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-1 md:gap-2">
-                {filteredBooks.map((book) => (
+        <>
+          <BookSearch setSearch={setSearchTerm} />
+          <div className="bg-shelf p-4 rounded-lg shadow-xl">
+            <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-1 md:gap-2">
+              {isLoadingBooks ? (
+                <SearchBooksLoader />
+              ) : displayedBooks.length === 0 ? (
+                <BooksNotFound />
+              ) : (
+                displayedBooks.map((book) => (
                   <BookSpine
                     key={book.id}
                     book={book}
                     onMouseEnter={(e) => handleBookHover(book.id, e)}
-                    onMouseLeave={handleBookLeave}
+                    onMouseLeave={() => setActiveBook(null)}
                   />
-                ))}
-              </div>
+                ))
+              )}
             </div>
-            {activeBook !== null && books.find((b) => b.id === activeBook) && (
-              <BookPopup
-                book={books.find((b) => b.id === activeBook)}
-                position={popupPosition}
-              />
-            )}
-          </>
-        )
+          </div>
+          {activeBookData && (
+            <BookPopup
+              book={activeBookData}
+              position={popupPosition}
+              unlocked={activeBookData.status === 0}
+            />
+          )}
+        </>
       )}
     </div>
-  );
+  )
 }
