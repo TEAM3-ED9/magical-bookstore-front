@@ -1,11 +1,11 @@
 import { useQueryState } from "nuqs"
 import { useEffect } from "react"
 
-export default function BookSearch({ setSearch }) {
+export default function BookSearch({ onSearch }) {
   const [searchTerm, setSearchTerm] = useQueryState("search")
 
   useEffect(() => {
-    setSearch(searchTerm)
+    onSearch(searchTerm)
   }, [searchTerm])
 
   return (
