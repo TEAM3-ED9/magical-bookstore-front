@@ -1,6 +1,6 @@
 import { useQueryState } from "nuqs"
 
-export default function BookSearch({ setSearch }) {
+export default function BookSearch({ onSearch }) {
   const [searchTerm, setSearchTerm] = useQueryState("search")
 
   return (
