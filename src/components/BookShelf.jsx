@@ -3,10 +3,9 @@ import BookSpine from "@/components/BookSpine";
 import BookPopup from "@/components/BookPopup";
 import BookSearch from "@/components/molecules/BookSearch";
 import useSWR from "swr";
-import { BACKEND_URL } from "@/lib/constants";
+import { BACKEND_URL, DURATION_MS } from "@/lib/constants"; // Import DURATION_MS también aquí
 import { fetcher } from "@/lib/utils";
 import { usePhraseCycle } from "../hooks/usePhraseCycle";
-import { DURATION_MS } from "@/lib/constants";
 
 const loadingPhrases = [
   "Analizando hechizos mágicos...",
@@ -33,7 +32,7 @@ export default function BookShelf() {
     data: books,
     error,
     isLoading,
-  } = useSWR(BACKEND_URL, fetcher, {
+  } = useSWR(`${BACKEND_URL}/books`, fetcher, { // ✅ CORRECCIÓN: Se añadió "/books" a la URL
     errorRetryInterval: (DURATION_MS * 2) / reloadErrorPhrases.length,
   });
   const loadingPhrase = usePhraseCycle(loadingPhrases);
@@ -88,7 +87,7 @@ export default function BookShelf() {
           </div>
         </div>
       ) : (
-        !error && (
+        !error && books && ( // ✅ CORRECCIÓN: Añadida comprobación de 'books' antes de renderizar
           <>
             <BookSearch setFilteredBooks={setFilteredBooks} />
             <div className="bg-[#5D4037] p-4 rounded-lg shadow-xl">
