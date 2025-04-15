@@ -1,5 +1,6 @@
 export default function BookSpine({ book, onClick }) {
   // Podemos ponerle esto para saber los libros que estan bloqueados y jugar con ellos como queramos
+  //Por back vienen dados los prohibidos como status: 1
   const isForbidden = book.status == 1;
 
   const handleClick = () => {
@@ -24,10 +25,10 @@ export default function BookSpine({ book, onClick }) {
       }}
       onClick={handleClick}
     >
-      {/*Muestra etiqueta "Prohibido" si isForbidden = true*/}
+      {/*Muestra etiqueta de prohibicion arriba en el libro si isForbidden = true*/}
       {isForbidden && (
-        <div className="absolute top-0 left-0 bg-red-600 text-white text-xs font-bold py-0.5 px-1 rounded-tl-md z-10">
-          Forbidden. Not for students!
+        <div className="absolute top-0 left-0 bg-red-600 text-yellow-500 text-center text-sm font-bold py-0.5 px-1 rounded-tl-md z-10">
+          Forbidden! <img src="marca-tenebrosa.jpg" alt="Marca Tenebrosa" className="w-8 h-8 ml-1"/>
         </div>
       )}
       <div className="absolute inset-0 bg-[url('/placeholder.svg')] opacity-20 mix-blend-overlay" />
