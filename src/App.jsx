@@ -8,7 +8,7 @@ export default function App() {
       <main className="relative min-h-screen text-white z-10 overflow-y-auto">
         <div className="max-w-7xl mx-auto p-2 md:p-4">
           <header className="p-4 sm:p-0 sm:pt-2 text-center sm:mb-4">
-            <h1 className="text-4xl md:text-5xl font-serif text-title sm:text-title/80 mb-2">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-HarryPotter text-title sm:text-title/80 mb-2">
               The Atrio of Rowena
             </h1>
             <p className="text-description sm:text-description/70 text-lg italic">
