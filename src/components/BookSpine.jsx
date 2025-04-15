@@ -16,7 +16,7 @@ export default function BookSpine({ book, onClick }) {
     <div
       className={`h-[280px] w-full rounded-sm cursor-pointer transition-all duration-300 hover:-translate-y-1 relative group overflow-hidden book-spine ${
         //Añade borde rojo si el libro es prohibido (podemos cambiarle el color al tomo entero)
-        isForbidden ? 'border-2 border-red-500' : ''
+        isForbidden ? 'border-1 border-red-500' : ''
       }`}
       style={{
         backgroundColor: `color-mix(in srgb, var(--color-book) ${
