@@ -1,14 +1,35 @@
 export default function BookSpine({ book, onClick }) {
+  // Podemos ponerle esto para saber los libros que estan bloqueados y jugar con ellos como queramos
+  const isForbidden = book.status == 1;
+
+  const handleClick = () => {
+    if (isForbidden) {
+      //pregunta si el libro es prohibido
+      onClick(book.id, true);
+    } else {
+      onClick(book.id);
+    }
+  };
+
   return (
     <div
-      className="h-[280px] w-full rounded-sm cursor-pointer transition-all duration-300 hover:-translate-y-1 relative group overflow-hidden book-spine"
+      className={`h-[280px] w-full rounded-sm cursor-pointer transition-all duration-300 hover:-translate-y-1 relative group overflow-hidden book-spine ${
+        //Añade borde rojo si el libro es prohibido (podemos cambiarle el color al tomo entero)
+        isForbidden ? 'border-2 border-red-500' : ''
+      }`}
       style={{
         backgroundColor: `color-mix(in srgb, var(--color-book) ${
           book.status === 0 ? "85%" : "5%"
         }, black 55%)`,
       }}
-      onClick={() => onClick(book.id)}
+      onClick={handleClick}
     >
+      {/*Muestra etiqueta "Prohibido" si isForbidden = true*/}
+      {isForbidden && (
+        <div className="absolute top-0 left-0 bg-red-600 text-white text-xs font-bold py-0.5 px-1 rounded-tl-md z-10">
+          Forbidden. Not for students!
+        </div>
+      )}
       <div className="absolute inset-0 bg-[url('/placeholder.svg')] opacity-20 mix-blend-overlay" />
       <div className="absolute inset-0 bg-gradient-to-br from-black/20 via-transparent to-black/30" />
       <div className="absolute right-0 top-0 h-full w-[3px] opacity-30 bg-[repeating-linear-gradient(0deg,transparent_0_20px,rgba(0,0,0,0.2)_20px_40px)]" />
@@ -34,5 +55,5 @@ export default function BookSpine({ book, onClick }) {
 
       <div className="absolute bottom-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
     </div>
-  )
+  );
 }
