@@ -1,20 +1,27 @@
-import { useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { useEffect, useState } from "react"; // ✅ Importa useState
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
-export default function BookModal({ isOpen, onClose, book }) {
+export default function BookModal({ isOpen, onClose, book, isBlocked, onAnswerSubmit }) {
+
+  const [answer, setAnswer] = useState('');
+  const [question, setQuestion] = useState(null);
+  const [isLoadingQuestion, setIsLoadingQuestion] = useState(false);
+  const [errorLoadingQuestion, setErrorLoadingQuestion] = useState(null);
+  const isBloqued = book.status = 1;
+
   const getBookSize = () => {
     if (typeof window !== "undefined") {
       if (window.innerWidth < 640) {
-        return { width: "95vw", height: "80vh" }
+        return { width: "95vw", height: "80vh" };
       } else if (window.innerWidth < 768) {
-        return { width: "90vw", height: "70vh" }
+        return { width: "90vw", height: "70vh" };
       }
     }
-    return { width: "700px", height: "450px" }
-  }
+    return { width: "700px", height: "450px" };
+  };
 
-  const bookSize = getBookSize()
+  const bookSize = getBookSize();
 
   const bookContent = [
     {
@@ -24,25 +31,72 @@ export default function BookModal({ isOpen, onClose, book }) {
         index: 1,
       },
       rightPage: {
-        title: "Description",
-        content:
-          book?.status === 0
-            ? book?.description ?? ""
-            : "You must unlock this book before to read it...",
+        title: isBlocked? "Forbidden book" : "Description", // ✅ Título de la página derecha cambia si está bloqueado
+        content: isBlocked
+          ? question // ✅ Si está bloqueado, muestra la pregunta
+            ? question
+            : isLoadingQuestion
+              ? "Loading question..." // ✅ Mensaje de carga
+              : errorLoadingQuestion
+                ? `Error: ${errorLoadingQuestion}` // ✅ Mensaje de error
+                : "This book is locked. Answer the question to unlock it." // ✅ Mensaje inicial si no hay pregunta
+          : book?.description ?? "", // ✅ Si no está bloqueado, muestra la descripción
         index: 2,
       },
     },
-  ]
+  ];
+
+  // ✅ useEffect para cargar la pregunta cuando el modal se abre y el libro está bloqueado
+  useEffect(() => {
+    if (isOpen && book && isBlocked) {
+      setIsLoadingQuestion(true);
+      setErrorLoadingQuestion(null);
+      fetch(`/api/books/${book.id}/question`) // ⚠️ Reemplaza con tu endpoint real
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then((data) => {
+          setQuestion(data.question);
+          setIsLoadingQuestion(false);
+        })
+        .catch((error) => {
+          console.error("Error fetching question:", error);
+          setErrorLoadingQuestion(error.message);
+          setIsLoadingQuestion(false);
+        });
+    } else {
+      setQuestion(null);
+      setAnswer(''); // ✅ Resetear la respuesta al cerrar o si no está bloqueado
+      setIsLoadingQuestion(false);
+      setErrorLoadingQuestion(null);
+    }
+  }, [isOpen, book, isBlocked]); // ✅ Dependencias del useEffect incluyen isBlocked
 
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape" && isOpen) {
-        onClose()
+        onClose();
       }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
+  // ✅ Función para manejar el envío de la respuesta
+  const handleAnswerSubmit = () => {
+    if (book && onAnswerSubmit && answer) {
+      onAnswerSubmit(book.id, answer);
+      setAnswer(''); // ✅ Limpiar el input después de enviar
     }
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [isOpen, onClose])
+  };
+
+  // ✅ Función para actualizar el estado de la respuesta
+  const handleAnswerChange = (event) => {
+    setAnswer(event.target.value);
+  };
 
   return (
     <AnimatePresence mode="wait">
@@ -67,7 +121,7 @@ export default function BookModal({ isOpen, onClose, book }) {
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") onClose()
+              if (e.key === "Enter" || e.key === " ") onClose();
             }}
           />
 
@@ -167,20 +221,42 @@ export default function BookModal({ isOpen, onClose, book }) {
                     <h2 className="text-2xl font-serif font-bold text-emerald-900 mb-4">
                       {bookContent[0].rightPage.title}
                     </h2>
-                    <p className="text-emerald-900 font-serif flex-grow">
+                    <p className="text-emerald-900 font-serif flex-grow mb-4">
                       {bookContent[0].rightPage.content}
                     </p>
+
+                    {/* ✅ Sección para la respuesta si el libro está bloqueado y la pregunta está cargada */}
+                    {isBlocked && question && (
+                      <div className="mb-4">
+                        <label
+                          htmlFor="answer"
+                          className="block text-gray-700 text-sm font-bold mb-2 font-serif"
+                        >
+                          Your Answer:
+                        </label>
+                        <input
+                          type="text"
+                          id="answer"
+                          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline font-serif"
+                          value={answer}
+                          onChange={handleAnswerChange}
+                        />
+                      </div>
+                    )}
+
                     <div className="mt-auto flex justify-between items-center pt-4 border-t border-amber-900/10">
                       <span className="text-sm text-emerald-800 font-serif">
                         {bookContent[0].rightPage.index}
                       </span>
                       <button
-                        onClick={() => {}}
-                        disabled
-                        className="p-2 rounded-full text-emerald-900 opacity-30 cursor-not-allowed"
-                        aria-label="Next page"
+                        onClick={isBlocked && question ? handleAnswerSubmit : () => {}} // ✅ Llama a handleAnswerSubmit si está bloqueado y hay pregunta
+                        disabled={isBlocked && !question} // ✅ Deshabilita el botón si está bloqueado pero no hay pregunta
+                        className={`p-2 rounded-full text-emerald-900 ${
+                          isBlocked && question ? "cursor-pointer" : "opacity-30 cursor-not-allowed"
+                        }`}
+                        aria-label={isBlocked ? "Submit Answer" : "Next page"}
                       >
-                        <ChevronRight size={20} />
+                        {isBlocked && question ? "Submit" : <ChevronRight size={20} />}
                       </button>
                     </div>
                   </motion.div>
@@ -191,5 +267,5 @@ export default function BookModal({ isOpen, onClose, book }) {
         </motion.div>
       )}
     </AnimatePresence>
-  )
+  );
 }
