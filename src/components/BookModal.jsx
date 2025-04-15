@@ -31,7 +31,7 @@ export default function BookModal({ isOpen, onClose, book, isBlocked, onAnswerSu
         index: 1,
       },
       rightPage: {
-        title: isBlocked? "Forbidden book" : "Description", // ✅ Título de la página derecha cambia si está bloqueado
+        title: isBlocked? "Hello, young wizard! This book is not for beginners. You must answer this question before to read it..." : "Description", // ✅ Título de la página derecha cambia si está bloqueado
         content: isBlocked
           ? question // ✅ Si está bloqueado, muestra la pregunta
             ? question
