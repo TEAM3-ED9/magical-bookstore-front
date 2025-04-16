@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import useSWR from "swr"
 import BookSpine from "@/components/BookSpine"
 import BookSearch from "@/components/molecules/BookSearch"
@@ -10,16 +10,12 @@ import SearchBooksLoader from "./molecules/SearchBooksLoader"
 import BooksNotFound from "./molecules/BooksNotFound"
 import { useDebounce } from "../hooks/useDebounce"
 import BookModal from "./BookModal"
-
-/**
- * TODO
- * Fix error when the query belongs to title or author and the other query fails
- */
+import { useQueryState } from "nuqs"
 
 const API_ENDPOINTS = {
-  BOOKS: `${BACKEND_URL}/books`,
-  TITLE_SEARCH: `${BACKEND_URL}/books/title`,
-  AUTHOR_SEARCH: `${BACKEND_URL}/books/author`,
+  BOOKS: `${BACKEND_URL}/api/books`,
+  TITLE_SEARCH: `${BACKEND_URL}/api/books/title`,
+  AUTHOR_SEARCH: `${BACKEND_URL}/api/books/author`,
 }
 
 const SWR_OPTIONS = {
@@ -37,7 +33,10 @@ const SEARCH_SWR_OPTIONS = {
 }
 
 export default function BookShelf() {
-  const [searchTerm, setSearchTerm] = useState("")
+  const [filterParam, setFilterParam] = useQueryState("filter", {
+    defaultValue: "title",
+  })
+  const [searchTerm, setSearchTerm] = useQueryState("search")
   const [activeBookId, setActiveBookId] = useState(null)
   const debouncedSearchTerm = useDebounce(searchTerm, 500)
 
@@ -47,32 +46,37 @@ export default function BookShelf() {
     isLoading: isBooksLoading,
   } = useSWR(API_ENDPOINTS.BOOKS, fetcher, SWR_OPTIONS)
 
-  const searchQueries = useMemo(() => {
+  const searchQuery = useMemo(() => {
     if (!debouncedSearchTerm) return null
-    return [
-      `${API_ENDPOINTS.TITLE_SEARCH}?title=${encodeURIComponent(debouncedSearchTerm)}`,
-      `${API_ENDPOINTS.AUTHOR_SEARCH}?author=${encodeURIComponent(debouncedSearchTerm)}`,
-    ]
-  }, [debouncedSearchTerm])
+
+    if (filterParam === "author") {
+      return `${API_ENDPOINTS.AUTHOR_SEARCH}?author=${encodeURIComponent(
+        debouncedSearchTerm
+      )}`
+    }
+
+    if (filterParam === "title") {
+      return `${API_ENDPOINTS.TITLE_SEARCH}?title=${encodeURIComponent(
+        debouncedSearchTerm
+      )}`
+    }
+
+    return null
+  }, [debouncedSearchTerm, filterParam])
 
   const {
     data: searchResults,
     error: searchError,
     isLoading: isSearching,
-  } = useSWR(
-    searchQueries,
-    (urls) => Promise.all(urls.map(fetcher)),
-    SEARCH_SWR_OPTIONS
-  )
+  } = useSWR(searchQuery, fetcher, SEARCH_SWR_OPTIONS)
 
   const displayedBooks = useMemo(() => {
     if (!booksData) return []
     if (!debouncedSearchTerm) return booksData
     if (!searchResults) return []
+    if (searchResults?.message?.includes("No books found")) return []
 
-    // Process and deduplicate search results
     return searchResults
-      .flat()
       .filter((result) => result?.id && result?.title && result?.author)
       .reduce((uniqueBooks, book) => {
         if (!uniqueBooks.some((b) => b.id === book.id)) {
@@ -80,7 +84,7 @@ export default function BookShelf() {
         }
         return uniqueBooks
       }, [])
-  }, [booksData, debouncedSearchTerm, searchResults])
+  }, [booksData, debouncedSearchTerm, searchResults, filterParam])
 
   const activeBookData = useMemo(() => {
     if (!booksData || !activeBookId) return null
@@ -105,7 +109,12 @@ export default function BookShelf() {
 
   return (
     <div className="relative min-h-[calc(100vh-16rem)] p-4 overflow-y-auto">
-      <BookSearch onSearch={setSearchTerm} />
+      <BookSearch
+        onSearch={setSearchTerm}
+        onFilter={setFilterParam}
+        filter={filterParam}
+        search={searchTerm}
+      />
 
       <div className="bg-shelf p-4 rounded-lg shadow-xl">
         <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-1 md:gap-2">
