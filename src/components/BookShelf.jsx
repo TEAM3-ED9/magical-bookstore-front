@@ -31,9 +31,7 @@ const SEARCH_SWR_OPTIONS = {
   errorRetryCount: 3,
 };
 
-// ========================= NUEVO CÓDIGO (ANTERIOR) =========================
-const BOOKS_PER_SHELF = 4; // Define cuántos libros mostrar por balda
-// ========================= FIN NUEVO CÓDIGO (ANTERIOR) =====================
+const BOOKS_PER_SHELF = 8; // 8 libros por fila como solicitaste
 
 export default function BookShelf() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -105,7 +103,6 @@ export default function BookShelf() {
     return <RequestLoader />;
   }
 
-  // ========================= NUEVO CÓDIGO (ANTERIOR) =========================
   const bookShelves = useMemo(() => {
     const shelves = [];
     for (let i = 0; i < Math.ceil(displayedBooks.length / BOOKS_PER_SHELF); i++) {
@@ -113,55 +110,57 @@ export default function BookShelf() {
     }
     return shelves;
   }, [displayedBooks]);
-  // ========================= FIN NUEVO CÓDIGO (ANTERIOR) =====================
 
   return (
-    // ========================= NUEVO CÓDIGO (ESTÉTICA) =========================
-    <div className="relative min-h-[calc(100vh-16rem)] p-4 overflow-y-auto bg-gray-100"> {/* Fondo para simular pared */}
+    <div className="relative min-h-[calc(100vh-16rem)] p-4 overflow-y-auto">
       <BookSearch onSearch={setSearchTerm} />
 
-      <div className="space-y-6 mt-4"> {/* Margen superior para separar del buscador */}
-        {bookShelves.map((shelf, index) => (
-          <div
-            key={index}
-            className="bg-shelf-base rounded-md shadow-md relative" /* Base de la estantería */
-            style={{
-              padding: '1rem',
-              borderLeft: '2px solid #a08863', /* Borde izquierdo */
-              borderRight: '2px solid #a08863', /* Borde derecho */
-            }}
-          >
-            {index > 0 && (
-              <div
-                className="absolute top-0 left-0 w-full h-0.5 bg-shelf-separator" /* Separador entre baldas */
-              />
-            )}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-1 md:gap-2">
-              {isSearching ? (
-                <SearchBooksLoader />
-              ) : shelf.length === 0 && displayedBooks.length > 0 ? (
-                <p className="col-span-full text-center text-gray-500">No hay libros en esta balda.</p>
-              ) : displayedBooks.length === 0 && !isSearching ? (
-                <BooksNotFound />
-              ) : (
-                shelf.map((book) => (
-                  <BookSpine
-                    key={book.id}
-                    book={book}
-                    onClick={handleBookClick}
-                  />
-                ))
-              )}
+      <div className="flex flex-col items-center">
+        {bookShelves.map((shelf, shelfIndex) => (
+          <div key={shelfIndex} className="relative mb-12 w-full max-w-6xl">
+            {/* Parte superior de la estantería (horizontal) */}
+            <div className="absolute -top-4 left-0 right-0 h-4 bg-amber-900 rounded-t-md z-10"></div>
+            
+            {/* Lados de la estantería (verticales) */}
+            <div className="absolute -top-4 -left-4 bottom-0 w-4 bg-amber-900 rounded-l-md"></div>
+            <div className="absolute -top-4 -right-4 bottom-0 w-4 bg-amber-900 rounded-r-md"></div>
+            
+            {/* Contenedor de libros */}
+            <div className="relative bg-amber-100 p-4 rounded-b-md shadow-lg">
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2">
+                {isSearching ? (
+                  <div className="col-span-8">
+                    <SearchBooksLoader />
+                  </div>
+                ) : shelf.length === 0 ? (
+                  <div className="col-span-8 text-center py-8">
+                    <p className="text-gray-500">No hay libros en esta balda</p>
+                  </div>
+                ) : (
+                  shelf.map((book) => (
+                    <BookSpine
+                      key={book.id}
+                      book={book}
+                      onClick={handleBookClick}
+                    />
+                  ))
+                )}
+              </div>
             </div>
           </div>
         ))}
-        {displayedBooks.length === 0 && !isSearching && bookShelves.length === 0 && (
-          <div className="bg-shelf p-4 rounded-lg shadow-xl">
-            <BooksNotFound />
+
+        {displayedBooks.length === 0 && !isSearching && (
+          <div className="relative w-full max-w-6xl">
+            <div className="absolute -top-4 left-0 right-0 h-4 bg-amber-900 rounded-t-md"></div>
+            <div className="absolute -top-4 -left-4 bottom-0 w-4 bg-amber-900 rounded-l-md"></div>
+            <div className="absolute -top-4 -right-4 bottom-0 w-4 bg-amber-900 rounded-r-md"></div>
+            <div className="bg-amber-100 p-8 rounded-b-md shadow-lg">
+              <BooksNotFound />
+            </div>
           </div>
         )}
       </div>
-      {/* ========================= FIN NUEVO CÓDIGO (ESTÉTICA) ===================== */}
 
       <BookModal
         isOpen={Boolean(activeBookData)}
