@@ -40,7 +40,7 @@ export default function BookShelf() {
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   // Datos de libros
-  const { data: booksData, error: booksError, isLoading: isBooksLoading } = 
+  const { data: booksData, error: booksError, isLoading: isBooksLoading } =
     useSWR(API_ENDPOINTS.BOOKS, fetcher, SWR_OPTIONS);
 
   // Búsqueda
@@ -52,7 +52,7 @@ export default function BookShelf() {
     ];
   }, [debouncedSearchTerm]);
 
-  const { data: searchResults, error: searchError, isLoading: isSearching } = 
+  const { data: searchResults, error: searchError, isLoading: isSearching } =
     useSWR(searchQueries, (urls) => Promise.all(urls.map(fetcher)), SEARCH_SWR_OPTIONS);
 
   // Libros a mostrar
@@ -100,19 +100,22 @@ export default function BookShelf() {
     <div className="relative min-h-[calc(100vh-16rem)] p-4 overflow-y-auto">
       <BookSearch onSearch={setSearchTerm} />
 
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center mt-20">
         {bookShelves.length > 0 ? (
           bookShelves.map((shelf, shelfIndex) => (
-            <div key={shelfIndex} className="relative mb-12 w-full max-w-6xl">
+            <div key={shelfIndex} className="relative w-full max-w-6xl">
               {/* Parte superior de la estantería */}
               <div className="absolute -top-4 left-0 right-0 h-4 bg-amber-900 rounded-t-md z-10"></div>
-              
+              {/* Parte inferior de la estantería */}
+              <div className="absolute bottom-0 left-0 right-0 h-4 bg-amber-900 rounded-b-md z-10"></div>
+
+
               {/* Lados de la estantería */}
-              <div className="absolute -top-4 -left-4 bottom-0 w-4 bg-amber-900 rounded-l-md"></div>
-              <div className="absolute -top-4 -right-4 bottom-0 w-4 bg-amber-900 rounded-r-md"></div>
-              
+              <div className="absolute -top-4 -left-4 bottom-0 w-10 bg-amber-900 rounded-l-md"></div>
+              <div className="absolute -top-4 -right-4 bottom-0 w-10 bg-amber-900 rounded-r-md"></div>
+
               {/* Libros */}
-              <div className="relative bg-amber-100 p-4 rounded-b-md shadow-lg">
+              <div className="relative bg-amber-100 p-4 rounded-b-md shadow-lg bg-gray-900">
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2">
                   {shelf.map((book) => (
                     <BookSpine
