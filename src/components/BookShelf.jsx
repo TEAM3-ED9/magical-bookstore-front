@@ -31,9 +31,9 @@ const SEARCH_SWR_OPTIONS = {
   errorRetryCount: 3,
 };
 
-// ========================= NUEVO CÓDIGO (ANTERIOR - Número de libros por estante) =========================
-const BOOKS_PER_SHELF = 8; // Define cuántos libros mostrar por balda (ahora 8)
-// ========================= FIN NUEVO CÓDIGO (ANTERIOR - Número de libros por estante) =====================
+// ========================= NUEVO CÓDIGO (ANTERIOR) =========================
+const BOOKS_PER_SHELF = 4; // Define cuántos libros mostrar por balda
+// ========================= FIN NUEVO CÓDIGO (ANTERIOR) =====================
 
 export default function BookShelf() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -105,7 +105,7 @@ export default function BookShelf() {
     return <RequestLoader />;
   }
 
-  // ========================= NUEVO CÓDIGO (ANTERIOR - Cálculo de las baldas) =========================
+  // ========================= NUEVO CÓDIGO (ANTERIOR) =========================
   const bookShelves = useMemo(() => {
     const shelves = [];
     for (let i = 0; i < Math.ceil(displayedBooks.length / BOOKS_PER_SHELF); i++) {
@@ -113,59 +113,55 @@ export default function BookShelf() {
     }
     return shelves;
   }, [displayedBooks]);
-  // ========================= FIN NUEVO CÓDIGO (ANTERIOR - Cálculo de las baldas) =====================
+  // ========================= FIN NUEVO CÓDIGO (ANTERIOR) =====================
 
   return (
-    // ========================= NUEVO CÓDIGO (ESTÉTICA - Estantería con tableros y estantes) =========================
-    <div className="relative min-h-[calc(100vh-16rem)] p-4 overflow-y-auto bg-tan-50"> {/* Fondo claro */}
+    // ========================= NUEVO CÓDIGO (ESTÉTICA) =========================
+    <div className="relative min-h-[calc(100vh-16rem)] p-4 overflow-y-auto bg-gray-100"> {/* Fondo para simular pared */}
       <BookSearch onSearch={setSearchTerm} />
 
-      <div className="mt-8 rounded-md shadow-lg overflow-hidden" style={{ backgroundColor: '#5c3d2e' }}> {/* Contenedor principal marrón oscuro */}
-        <div className="flex">
-          {/* Tablero izquierdo */}
-          <div className="w-6 bg-wood-dark" />
-          {/* Espacio para los libros */}
-          <div className="flex-1 py-4">
-            <div className="space-y-4">
-              {bookShelves.map((shelf, index) => (
-                <div
-                  key={index}
-                  className="bg-wood-light rounded-sm relative"
-                  style={{ padding: '0.75rem' }}
-                >
-                  {index > 0 && (
-                    <div className="absolute top-0 left-0 w-full h-0.5 bg-wood-medium" /> 
-                  )}{/* Estante */}
-                  <div className="grid grid-cols-4 md:grid-cols-8 gap-2"> {/* 8 libros por fila */}
-                    {isSearching ? (
-                      <SearchBooksLoader />
-                    ) : shelf.length === 0 && displayedBooks.length > 0 ? (
-                      <p className="col-span-full text-center text-gray-300">Vacío</p>
-                    ) : displayedBooks.length === 0 && !isSearching ? (
-                      <BooksNotFound />
-                    ) : (
-                      shelf.map((book) => (
-                        <BookSpine
-                          key={book.id}
-                          book={book}
-                          onClick={handleBookClick}
-                        />
-                      ))
-                    )}
-                  </div>
-                </div>
-              ))}
-              {displayedBooks.length === 0 && !isSearching && bookShelves.length === 0 && (
-                <div className="bg-wood-light p-4 rounded-md">
-                  <BooksNotFound />
-                </div>
+      <div className="space-y-6 mt-4"> {/* Margen superior para separar del buscador */}
+        {bookShelves.map((shelf, index) => (
+          <div
+            key={index}
+            className="bg-shelf-base rounded-md shadow-md relative" /* Base de la estantería */
+            style={{
+              padding: '1rem',
+              borderLeft: '2px solid #a08863', /* Borde izquierdo */
+              borderRight: '2px solid #a08863', /* Borde derecho */
+            }}
+          >
+            {index > 0 && (
+              <div
+                className="absolute top-0 left-0 w-full h-0.5 bg-shelf-separator" /* Separador entre baldas */
+              />
+            )}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-1 md:gap-2">
+              {isSearching ? (
+                <SearchBooksLoader />
+              ) : shelf.length === 0 && displayedBooks.length > 0 ? (
+                <p className="col-span-full text-center text-gray-500">No hay libros en esta balda.</p>
+              ) : displayedBooks.length === 0 && !isSearching ? (
+                <BooksNotFound />
+              ) : (
+                shelf.map((book) => (
+                  <BookSpine
+                    key={book.id}
+                    book={book}
+                    onClick={handleBookClick}
+                  />
+                ))
               )}
             </div>
           </div>
-          {/* Tablero derecho */}
-          <div className="w-6 bg-wood-dark" />
-        </div>
+        ))}
+        {displayedBooks.length === 0 && !isSearching && bookShelves.length === 0 && (
+          <div className="bg-shelf p-4 rounded-lg shadow-xl">
+            <BooksNotFound />
+          </div>
+        )}
       </div>
+      {/* ========================= FIN NUEVO CÓDIGO (ESTÉTICA) ===================== */}
 
       <BookModal
         isOpen={Boolean(activeBookData)}
@@ -173,6 +169,5 @@ export default function BookShelf() {
         onClose={handleCloseModal}
       />
     </div>
-    // ========================= FIN NUEVO CÓDIGO (ESTÉTICA - Estantería con tableros y estantes) =====================
   );
 }
