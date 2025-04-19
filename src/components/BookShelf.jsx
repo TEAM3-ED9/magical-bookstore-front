@@ -103,16 +103,16 @@ export default function BookShelf() {
       <div className="flex flex-col items-center mt-20">
         {bookShelves.length > 0 ? (
           bookShelves.map((shelf, shelfIndex) => (
-            <div key={shelfIndex} className="relative w-full max-w-6xl">
+            <div key={shelfIndex} className="relative w-full max-w-6xl -mb-3">
               {/* Parte superior de la estantería */}
-              <div className="absolute -top-4 left-0 right-0 h-4 bg-amber-900 rounded-t-md z-10"></div>
+              <div className="absolute -top-4 left-0 right-0 h-7 bg-brown-500 rounded-t-md z-10 bg-amber-800 border border-black"></div>
               {/* Parte inferior de la estantería */}
-              <div className="absolute bottom-0 left-0 right-0 h-4 bg-amber-900 rounded-b-md z-10"></div>
+              <div className="absolute bottom-0 left-0 right-0 h-7 bg-amber-800 rounded-b-md z-10 border border-black"></div>
 
 
               {/* Lados de la estantería */}
-              <div className="absolute -top-4 -left-4 bottom-0 w-10 bg-amber-900 rounded-l-md"></div>
-              <div className="absolute -top-4 -right-4 bottom-0 w-10 bg-amber-900 rounded-r-md"></div>
+              <div className="absolute -top-4 -left-7 bottom-0 w-12 bg-amber-800 rounded-l-md "></div>
+              <div className="absolute -top-4 -right-7 bottom-0 w-12 bg-amber-800 rounded-r-md"></div>
 
               {/* Libros */}
               <div className="relative bg-amber-100 p-4 rounded-b-md shadow-lg bg-gray-900">
