@@ -7,6 +7,7 @@ export default function BookModal({ isOpen, onClose, book }) {
   const [loadingQuestion, setLoadingQuestion] = useState(false)
   const [userAnswer, setUserAnswer] = useState("")
   const [isUnlocked, setIsUnlocked] = useState(false)
+  const [answerIncorrect, setAnswerIncorrect] = useState(false)
 
   const getBookSize = () => {
     if (typeof window !== "undefined") {
@@ -26,6 +27,9 @@ export default function BookModal({ isOpen, onClose, book }) {
     const normalizedCorrect = questionData?.answer?.trim().toLowerCase()
     if (normalizedUser === normalizedCorrect) {
       setIsUnlocked(true)
+      setAnswerIncorrect(false)
+    } else {
+      setAnswerIncorrect(true)
     }
   }
 
@@ -33,7 +37,11 @@ export default function BookModal({ isOpen, onClose, book }) {
     if (loadingQuestion) {
       return (
         <div className="flex flex-col items-center justify-center text-center">
-          <div className="w-16 h-16 border-4 border-amber-300 border-t-transparent rounded-full animate-spin mb-4" />
+          <img
+            src="/wand-loader.gif"
+            alt="Wand Loader"
+            className="w-32 h-32 mb-4" // Tamaño grande del gif
+          />
           <p className="font-magic text-md text-amber-800">
             The Pensieve is searching for a question...
           </p>
@@ -59,8 +67,11 @@ export default function BookModal({ isOpen, onClose, book }) {
             onClick={checkAnswer}
             className="bg-emerald-800 text-white font-magic px-4 py-2 rounded hover:bg-emerald-700 transition"
           >
-            Submit Answer
+            Send Owl
           </button>
+          {answerIncorrect && (
+            <p className="text-red-600 text-sm mt-2">Incorrect answer. You are not allowed to read the book yet!</p>
+          )}
         </div>
       )
     }
@@ -93,6 +104,7 @@ export default function BookModal({ isOpen, onClose, book }) {
         setLoadingQuestion(true)
         setIsUnlocked(false)
         setUserAnswer("")
+        setAnswerIncorrect(false)
         try {
           const response = await fetch(`http://localhost/api/questions/random?book_id=${book.id}`)
           if (!response.ok) throw new Error("Error fetching question")
