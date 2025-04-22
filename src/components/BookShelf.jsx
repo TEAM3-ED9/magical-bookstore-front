@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import useSWR from "swr"
-import BookSpine from "@/components/BookSpine"
-import BookSearch from "@/components/molecules/BookSearch"
-import { BACKEND_URL } from "@/lib/constants"
-import { fetcher } from "@/lib/utils"
-import ErrorLoader from "./molecules/ErrorLoader"
-import RequestLoader from "./molecules/RequestLoader"
-import SearchBooksLoader from "./molecules/SearchBooksLoader"
-import BooksNotFound from "./molecules/BooksNotFound"
-import { useDebounce } from "../hooks/useDebounce"
-import BookModal from "./BookModal"
-import { useQueryState } from "nuqs"
+import useSWR from "swr";
+import BookSpine from "@/components/BookSpine";
+import BookSearch from "@/components/molecules/BookSearch";
+import { BACKEND_URL } from "@/lib/constants";
+import { fetcher } from "@/lib/utils";
+import ErrorLoader from "./molecules/ErrorLoader";
+import RequestLoader from "./molecules/RequestLoader";
+import SearchBooksLoader from "./molecules/SearchBooksLoader";
+import BooksNotFound from "./molecules/BooksNotFound";
+import { useDebounce } from "../hooks/useDebounce";
+import BookModal from "./BookModal";
+import { useQueryState } from "nuqs";
 
 const API_ENDPOINTS = {
   BOOKS: `${BACKEND_URL}/books`,
@@ -32,18 +32,16 @@ const SEARCH_SWR_OPTIONS = {
   errorRetryCount: 3,
 };
 
-const BOOKS_PER_SHELF = 8
+const BOOKS_PER_SHELF = 8;
 
-export default function BookShelf({ onLoad }) {
+export default function BookShelf() {
   // Estados
   const [filterParam, setFilterParam] = useQueryState("filter", {
     defaultValue: "title",
-  })
-  const [searchTerm, setSearchTerm] = useQueryState("search")
-  const [activeBookId, setActiveBookId] = useState(null)
-  const debouncedSearchTerm = useDebounce(searchTerm, 500)
-  // ✅ Nuevo estado para controlar si el libro activo está bloqueado
-  const [isBookBlocked, setIsBookBlocked] = useState(false);
+  });
+  const [searchTerm, setSearchTerm] = useQueryState("search");
+  const [activeBookId, setActiveBookId] = useState(null);
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   // Datos de libros
   const {
@@ -54,35 +52,35 @@ export default function BookShelf({ onLoad }) {
 
   // Búsqueda
   const searchQuery = useMemo(() => {
-    if (!debouncedSearchTerm) return null
+    if (!debouncedSearchTerm) return null;
 
     if (filterParam === "author") {
       return `${API_ENDPOINTS.AUTHOR_SEARCH}?author=${encodeURIComponent(
         debouncedSearchTerm
-      )}`
+      )}`;
     }
 
     if (filterParam === "title") {
       return `${API_ENDPOINTS.TITLE_SEARCH}?title=${encodeURIComponent(
         debouncedSearchTerm
-      )}`
+      )}`;
     }
 
-    return null
-  }, [debouncedSearchTerm, filterParam])
+    return null;
+  }, [debouncedSearchTerm, filterParam]);
 
   const {
     data: searchResults,
     error: searchError,
     isLoading: isSearching,
-  } = useSWR(searchQuery, fetcher, SEARCH_SWR_OPTIONS)
+  } = useSWR(searchQuery, fetcher, SEARCH_SWR_OPTIONS);
 
   // Libros a mostrar
   const displayedBooks = useMemo(() => {
-    if (!booksData) return []
-    if (!debouncedSearchTerm) return booksData
-    if (!searchResults) return []
-    if (searchResults?.message?.includes("No books found")) return []
+    if (!booksData) return [];
+    if (!debouncedSearchTerm) return booksData;
+    if (!searchResults) return [];
+    if (searchResults?.message?.includes("No books found")) return [];
 
     return searchResults
       .filter((result) => result?.id && result?.title && result?.author)
@@ -90,9 +88,9 @@ export default function BookShelf({ onLoad }) {
         if (!uniqueBooks.some((b) => b.id === book.id)) {
           uniqueBooks.push(book);
         }
-        return uniqueBooks
-      }, [])
-  }, [booksData, debouncedSearchTerm, searchResults, filterParam])
+        return uniqueBooks;
+      }, []);
+  }, [booksData, debouncedSearchTerm, searchResults, filterParam]);
 
   // Libro activo para el modal
   const activeBookData = useMemo(() => {
@@ -101,26 +99,13 @@ export default function BookShelf({ onLoad }) {
   }, [booksData, activeBookId]);
 
   // Handlers
-  const handleBookClick = (bookId, isBlocked) => {
-    setActiveBookId(bookId);
-    // ✅ Determina si el libro está bloqueado al hacer clic
-    setIsBookBlocked(isBlocked);
-  }
-  const handleCloseModal = () => setActiveBookId(null)
-
-  // ✅ Función para manejar el envío de la respuesta desde el modal
-  const handleAnswerSubmit = (bookId, answer) => {
-    // Aquí puedes implementar la lógica para verificar la respuesta con tu backend
-    console.log(`Respuesta para el libro ${bookId}: ${answer}`);
-    // Después de verificar la respuesta (y si es correcta), podrías actualizar el estado del libro
-    // y cerrar el modal o permitir la lectura. Por ahora, solo cerramos el modal.
-    handleCloseModal();
-  };
+  const handleBookClick = (bookId) => setActiveBookId(bookId);
+  const handleCloseModal = () => setActiveBookId(null);
 
   // Organización en estanterías
   const bookShelves = useMemo(() => {
-    if (!displayedBooks.length) return []
-    const shelves = []
+    if (!displayedBooks.length) return [];
+    const shelves = [];
     for (
       let i = 0;
       i < Math.ceil(displayedBooks.length / BOOKS_PER_SHELF);
@@ -128,16 +113,14 @@ export default function BookShelf({ onLoad }) {
     ) {
       shelves.push(
         displayedBooks.slice(i * BOOKS_PER_SHELF, (i + 1) * BOOKS_PER_SHELF)
-      )
+      );
     }
-    return shelves
-  }, [displayedBooks])
+    return shelves;
+  }, [displayedBooks]);
 
   // Renderizado condicional (fuera del flujo principal de hooks)
-  if (booksError || searchError) return <ErrorLoader />
-  if (isBooksLoading) return <RequestLoader />
-
-  onLoad(true)
+  if (booksError || searchError) return <ErrorLoader />;
+  if (isBooksLoading) return <RequestLoader />;
 
   return (
     <div className="relative min-h-[calc(100vh-16rem)] p-4 overflow-y-auto">
@@ -171,8 +154,7 @@ export default function BookShelf({ onLoad }) {
                     <BookSpine
                       key={book.id}
                       book={book}
-                      // ✅ Pasa el estado de bloqueo al hacer clic
-                      onClick={() => handleBookClick(book.id, book.status === 1)}
+                      onClick={handleBookClick}
                     />
                   ))}
                 </div>
@@ -201,12 +183,12 @@ export default function BookShelf({ onLoad }) {
           isOpen={Boolean(activeBookData)}
           book={activeBookData}
           onClose={handleCloseModal}
-          // ✅ Pasa el estado de bloqueo al BookModal
+          // ✅ Pasa isBlocked al BookModal
           isBlocked={isBookBlocked}
           // ✅ Pasa la función para manejar el envío de la respuesta
           onAnswerSubmit={handleAnswerSubmit}
         />
       )}
     </div>
-  )
+  );
 }
