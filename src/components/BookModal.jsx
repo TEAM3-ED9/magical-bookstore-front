@@ -1,14 +1,13 @@
-import { useEffect, useState } from "react"; // ✅ Importa useState
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function BookModal({ isOpen, onClose, book, isBlocked, onAnswerSubmit }) {
-
   const [answer, setAnswer] = useState('');
   const [question, setQuestion] = useState(null);
   const [isLoadingQuestion, setIsLoadingQuestion] = useState(false);
   const [errorLoadingQuestion, setErrorLoadingQuestion] = useState(null);
-  const isBloqued = book.status = 1;
+  const isBloqued = book.status === 1; // ✅ Corregí la asignación por comparación
 
   const getBookSize = () => {
     if (typeof window !== "undefined") {
@@ -31,27 +30,26 @@ export default function BookModal({ isOpen, onClose, book, isBlocked, onAnswerSu
         index: 1,
       },
       rightPage: {
-        title: isBlocked? "Hello, young wizard! This book is not for beginners. You must answer this question before to read it..." : "Description", // ✅ Título de la página derecha cambia si está bloqueado
+        title: isBlocked ? "Hello, young wizard! This book is not for beginners. You must answer this question before to read it..." : "Description",
         content: isBlocked
-          ? question // ✅ Si está bloqueado, muestra la pregunta
+          ? question
             ? question
             : isLoadingQuestion
-              ? "Loading question..." // ✅ Mensaje de carga
+              ? "Loading question..."
               : errorLoadingQuestion
-                ? `Error: ${errorLoadingQuestion}` // ✅ Mensaje de error
-                : "This book is locked. Answer the question to unlock it." // ✅ Mensaje inicial si no hay pregunta
-          : book?.description ?? "", // ✅ Si no está bloqueado, muestra la descripción
+                ? `Error: ${errorLoadingQuestion}`
+                : "This book is locked. Answer the question to unlock it."
+          : book?.description ?? "",
         index: 2,
       },
     },
   ];
 
-  // ✅ useEffect para cargar la pregunta cuando el modal se abre y el libro está bloqueado
   useEffect(() => {
     if (isOpen && book && isBlocked) {
       setIsLoadingQuestion(true);
       setErrorLoadingQuestion(null);
-      fetch(`/api/books/${book.id}/question`) // ⚠️ Reemplaza con tu endpoint real
+      fetch(`/api/questions/random?bookId=${book.id}`) // ⚠️ Añadiendo el bookId como parámetro de consulta
         .then((response) => {
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -59,7 +57,7 @@ export default function BookModal({ isOpen, onClose, book, isBlocked, onAnswerSu
           return response.json();
         })
         .then((data) => {
-          setQuestion(data.question);
+          setQuestion(data.question); // Asumiendo que la respuesta tiene un campo "question"
           setIsLoadingQuestion(false);
         })
         .catch((error) => {
@@ -69,11 +67,11 @@ export default function BookModal({ isOpen, onClose, book, isBlocked, onAnswerSu
         });
     } else {
       setQuestion(null);
-      setAnswer(''); // ✅ Resetear la respuesta al cerrar o si no está bloqueado
+      setAnswer('');
       setIsLoadingQuestion(false);
       setErrorLoadingQuestion(null);
     }
-  }, [isOpen, book, isBlocked]); // ✅ Dependencias del useEffect incluyen isBlocked
+  }, [isOpen, book, isBlocked]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -85,15 +83,13 @@ export default function BookModal({ isOpen, onClose, book, isBlocked, onAnswerSu
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
-  // ✅ Función para manejar el envío de la respuesta
   const handleAnswerSubmit = () => {
     if (book && onAnswerSubmit && answer) {
-      onAnswerSubmit(book.id, answer);
-      setAnswer(''); // ✅ Limpiar el input después de enviar
+      onAnswerSubmit(book.id, answer); // Pasas el ID del libro y la respuesta
+      setAnswer('');
     }
   };
 
-  // ✅ Función para actualizar el estado de la respuesta
   const handleAnswerChange = (event) => {
     setAnswer(event.target.value);
   };
