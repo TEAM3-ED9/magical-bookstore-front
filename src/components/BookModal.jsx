@@ -40,7 +40,7 @@ export default function BookModal({ isOpen, onClose, book }) {
           <img
             src="/wand-loader.gif"
             alt="Wand Loader"
-            className="w-32 h-32 mb-4" // Tamaño grande del gif
+            className="w-60 h-32 mb-4" // Tamaño grande del gif
           />
           <p className="font-magic text-md text-amber-800">
             The Pensieve is searching for a question...
