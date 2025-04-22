@@ -34,7 +34,7 @@ const SEARCH_SWR_OPTIONS = {
 
 const BOOKS_PER_SHELF = 8
 
-export default function BookShelf() {
+export default function BookShelf({ onLoad }) {
   // Estados
   const [filterParam, setFilterParam] = useQueryState("filter", {
     defaultValue: "title",
@@ -136,6 +136,8 @@ export default function BookShelf() {
   // Renderizado condicional (fuera del flujo principal de hooks)
   if (booksError || searchError) return <ErrorLoader />
   if (isBooksLoading) return <RequestLoader />
+
+  onLoad(true)
 
   return (
     <div className="relative min-h-[calc(100vh-16rem)] p-4 overflow-y-auto">
