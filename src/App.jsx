@@ -1,10 +1,15 @@
 import Bookshelf from "@/components/BookShelf"
+import { useState } from "react"
+import GuideAvatar from "./components/molecules/GuideAvatar"
 
 export default function App() {
+  const [loaded, setLoaded] = useState(false)
+
   return (
     <div className="relative">
       <div className="fixed inset-0 bg-[url(/background.webp)] bg-cover" />
       <div className="fixed inset-0 bg-black/10 backdrop-blur-sm" />
+      {loaded && <GuideAvatar />}
       <main className="relative min-h-screen text-white z-10 overflow-y-auto">
         <div className="max-w-7xl mx-auto p-2 md:p-4">
           <header className="p-4 sm:p-0 sm:pt-2 text-center sm:mb-4">
@@ -16,7 +21,7 @@ export default function App() {
               Rowena
             </p>
           </header>
-          <Bookshelf />
+          <Bookshelf onLoad={setLoaded} />
         </div>
       </main>
     </div>
