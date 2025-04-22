@@ -1,29 +1,23 @@
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { ChevronLeft, ChevronRight } from "lucide-react"
+import useSWR from "swr" // Añadido para realizar la llamada a la API.
 
-export default function BookModal({ isOpen, onClose, book, isBlocked, onAnswerSubmit }) {
-  const [answer, setAnswer] = useState('');
-  const [question, setQuestion] = useState(null);
-  const [isLoadingQuestion, setIsLoadingQuestion] = useState(false);
-  const [errorLoadingQuestion, setErrorLoadingQuestion] = useState(null);
+export default function BookModal({ isOpen, onClose, book }) {
+  const [questionData, setQuestionData] = useState(null) // Estado para almacenar la pregunta.
 
-  // No cambies la lógica aquí, solo corregí el tipo de variable
-  const isBloqued = isBlocked; // Corregí la variable para que use el estado "isBlocked" de forma correcta
-
-  // Obtención del tamaño del libro
   const getBookSize = () => {
     if (typeof window !== "undefined") {
       if (window.innerWidth < 640) {
-        return { width: "95vw", height: "80vh" };
+        return { width: "95vw", height: "80vh" }
       } else if (window.innerWidth < 768) {
-        return { width: "90vw", height: "70vh" };
+        return { width: "90vw", height: "70vh" }
       }
     }
-    return { width: "700px", height: "450px" };
-  };
+    return { width: "700px", height: "450px" }
+  }
 
-  const bookSize = getBookSize();
+  const bookSize = getBookSize()
 
   const bookContent = [
     {
@@ -33,74 +27,40 @@ export default function BookModal({ isOpen, onClose, book, isBlocked, onAnswerSu
         index: 1,
       },
       rightPage: {
-        title: isBlocked ? "This book is not for beginners. You must answer this question before to read it..." : "Description",
-        content: isBlocked
-          ? question
-            ? question
-            : isLoadingQuestion
-              ? "Loading question..."
-              : errorLoadingQuestion
-                ? `Error: ${errorLoadingQuestion}`
-                : "This book is locked. Answer the question to unlock it."
-          : book?.description ?? "",
+        title: "Description",
+        content:
+          book?.status === 1 // Si el libro está bloqueado, mostrar la pregunta.
+            ? questionData
+              ? questionData.question // Si hay una pregunta, mostrarla.
+              : "Loading question..." // Si no se ha cargado la pregunta, mostrar cargando.
+            : book?.description ?? "",
         index: 2,
       },
     },
-  ];
+  ]
 
-  // Cargar la pregunta al abrir el modal si el libro está bloqueado
+  // Llamada a la API para obtener la pregunta cuando el libro está bloqueado.
+  const fetchQuestion = async (bookId) => {
+    const response = await fetch(`http://localhost/api/questions/random?book_id=${bookId}`)
+    const data = await response.json()
+    setQuestionData(data) // Guardamos la pregunta en el estado.
+  }
+
   useEffect(() => {
-    if (isOpen && book && isBlocked) {
-      setIsLoadingQuestion(true);
-      setErrorLoadingQuestion(null);
-      fetch(`/api/questions/random?book_id=${book.id}`) // Aquí se añade book.id para traer la pregunta correcta
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then((data) => {
-          setQuestion(data.question); // Suponiendo que la API devuelve un campo "question"
-          setIsLoadingQuestion(false);
-        })
-        .catch((error) => {
-          console.error("Error fetching question:", error);
-          setErrorLoadingQuestion(error.message);
-          setIsLoadingQuestion(false);
-        });
-    } else {
-      // Si el modal se cierra, limpiamos los estados
-      setQuestion(null);
-      setAnswer('');
-      setIsLoadingQuestion(false);
-      setErrorLoadingQuestion(null);
+    if (book?.status === 1 && book?.id) { // Si el libro está bloqueado (status 1)
+      fetchQuestion(book.id) // Realizar la llamada a la API.
     }
-  }, [isOpen, book, isBlocked]);
+  }, [book])
 
-  // Detectar escape para cerrar el modal
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape" && isOpen) {
-        onClose();
+        onClose()
       }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
-
-  // Función para manejar el envío de respuesta
-  const handleAnswerSubmit = () => {
-    if (book && onAnswerSubmit && answer) {
-      onAnswerSubmit(book.id, answer); // Llamamos a la función pasándole el id del libro y la respuesta
-      setAnswer(''); // Limpiamos la respuesta después de enviarla
     }
-  };
-
-  // Función para cambiar la respuesta
-  const handleAnswerChange = (event) => {
-    setAnswer(event.target.value);
-  };
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [isOpen, onClose])
 
   return (
     <AnimatePresence mode="wait">
@@ -125,11 +85,11 @@ export default function BookModal({ isOpen, onClose, book, isBlocked, onAnswerSu
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") onClose();
+              if (e.key === "Enter" || e.key === " ") onClose()
             }}
           />
 
-          {/* Contenedor del libro */}
+          {/* Book Container */}
           <motion.div
             className="relative z-10"
             style={{ perspective: "2000px" }}
@@ -142,7 +102,6 @@ export default function BookModal({ isOpen, onClose, book, isBlocked, onAnswerSu
               transition: { duration: 0.3, ease: "easeInOut" },
             }}
           >
-            {/* Aquí va la animación de las páginas del libro */}
             <motion.div
               className="relative flex px-4 py-2 bg-[url(/book.webp)] bg-no-repeat bg-cover rounded-2xl"
               style={{
@@ -163,7 +122,6 @@ export default function BookModal({ isOpen, onClose, book, isBlocked, onAnswerSu
                 style={{ zIndex: -1 }}
               />
 
-              {/* Páginas del libro */}
               <AnimatePresence mode="wait">
                 <motion.div
                   key="spread-0"
@@ -173,7 +131,7 @@ export default function BookModal({ isOpen, onClose, book, isBlocked, onAnswerSu
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  {/* Página izquierda */}
+                  {/* Left Page */}
                   <motion.div
                     className="w-1/2 h-full bg-amber-50 p-8 flex flex-col border-r-2 rounded-xl border-amber-900/20 overflow-y-auto"
                     initial={{ rotateY: -90, opacity: 0 }}
@@ -196,7 +154,7 @@ export default function BookModal({ isOpen, onClose, book, isBlocked, onAnswerSu
                     </p>
                     <div className="mt-auto flex justify-between items-center pt-4 border-t border-amber-900/10">
                       <button
-                        onClick={() => { }}
+                        onClick={() => {}}
                         disabled
                         className="p-2 rounded-full text-emerald-900 opacity-30 cursor-not-allowed"
                         aria-label="Previous page"
@@ -209,7 +167,7 @@ export default function BookModal({ isOpen, onClose, book, isBlocked, onAnswerSu
                     </div>
                   </motion.div>
 
-                  {/* Página derecha */}
+                  {/* Right Page */}
                   <motion.div
                     className="w-1/2 h-full bg-amber-50 p-8 flex flex-col border-l-2 rounded-xl border-amber-900/20 overflow-y-auto"
                     initial={{ rotateY: 90, opacity: 0 }}
@@ -227,35 +185,19 @@ export default function BookModal({ isOpen, onClose, book, isBlocked, onAnswerSu
                     <h2 className="text-2xl font-serif font-bold text-emerald-900 mb-4">
                       {bookContent[0].rightPage.title}
                     </h2>
-                    <p className="text-emerald-900 font-serif flex-grow mb-4">
+                    <p className="text-emerald-900 font-serif flex-grow">
                       {bookContent[0].rightPage.content}
                     </p>
-
-                    {/* Sección para la respuesta si el libro está bloqueado */}
-                    {isBlocked && question && (
-                      <div className="mb-4">
-                        <label
-                          htmlFor="answer"
-                          className="block text-gray-700 text-sm font-bold mb-2 font-serif"
-                        >
-                          Your Answer:
-                        </label>
-                        <input
-                          type="text"
-                          id="answer"
-                          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline font-serif"
-                          value={answer}
-                          onChange={handleAnswerChange}
-                        />
-                      </div>
-                    )}
-
                     <div className="mt-auto flex justify-between items-center pt-4 border-t border-amber-900/10">
                       <span className="text-sm text-emerald-800 font-serif">
                         {bookContent[0].rightPage.index}
-                      </span> <button className="p-2 rounded-full text-emerald-900"
-                        onClick={handleAnswerSubmit}
-                        disabled={isBlocked && !answer} aria-label="Next page" >
+                      </span>
+                      <button
+                        onClick={() => {}}
+                        disabled
+                        className="p-2 rounded-full text-emerald-900 opacity-30 cursor-not-allowed"
+                        aria-label="Next page"
+                      >
                         <ChevronRight size={20} />
                       </button>
                     </div>
@@ -264,6 +206,8 @@ export default function BookModal({ isOpen, onClose, book, isBlocked, onAnswerSu
               </AnimatePresence>
             </motion.div>
           </motion.div>
-        </motion.div>)}
-    </AnimatePresence>);
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
 }
