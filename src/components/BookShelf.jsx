@@ -42,6 +42,8 @@ export default function BookShelf() {
   const [searchTerm, setSearchTerm] = useQueryState("search")
   const [activeBookId, setActiveBookId] = useState(null)
   const debouncedSearchTerm = useDebounce(searchTerm, 500)
+  // ✅ Nuevo estado para controlar si el libro activo está bloqueado
+  const [isBookBlocked, setIsBookBlocked] = useState(false);
 
   // Datos de libros
   const {
@@ -99,8 +101,21 @@ export default function BookShelf() {
   }, [booksData, activeBookId]);
 
   // Handlers
-  const handleBookClick = (bookId) => setActiveBookId(bookId)
+  const handleBookClick = (bookId, isBlocked) => {
+    setActiveBookId(bookId);
+    // ✅ Determina si el libro está bloqueado al hacer clic
+    setIsBookBlocked(isBlocked);
+  }
   const handleCloseModal = () => setActiveBookId(null)
+
+  // ✅ Función para manejar el envío de la respuesta desde el modal
+  const handleAnswerSubmit = (bookId, answer) => {
+    // Aquí puedes implementar la lógica para verificar la respuesta con tu backend
+    console.log(`Respuesta para el libro ${bookId}: ${answer}`);
+    // Después de verificar la respuesta (y si es correcta), podrías actualizar el estado del libro
+    // y cerrar el modal o permitir la lectura. Por ahora, solo cerramos el modal.
+    handleCloseModal();
+  };
 
   // Organización en estanterías
   const bookShelves = useMemo(() => {
@@ -154,7 +169,8 @@ export default function BookShelf() {
                     <BookSpine
                       key={book.id}
                       book={book}
-                      onClick={handleBookClick}
+                      // ✅ Pasa el estado de bloqueo al hacer clic
+                      onClick={() => handleBookClick(book.id, book.status === 1)}
                     />
                   ))}
                 </div>
@@ -183,7 +199,7 @@ export default function BookShelf() {
           isOpen={Boolean(activeBookData)}
           book={activeBookData}
           onClose={handleCloseModal}
-          // ✅ Pasa isBlocked al BookModal
+          // ✅ Pasa el estado de bloqueo al BookModal
           isBlocked={isBookBlocked}
           // ✅ Pasa la función para manejar el envío de la respuesta
           onAnswerSubmit={handleAnswerSubmit}
