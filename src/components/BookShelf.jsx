@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import useSWR from "swr";
-import BookSpine from "@/components/BookSpine";
-import BookSearch from "@/components/molecules/BookSearch";
-import { BACKEND_URL } from "@/lib/constants";
-import { fetcher } from "@/lib/utils";
-import ErrorLoader from "./molecules/ErrorLoader";
-import RequestLoader from "./molecules/RequestLoader";
-import SearchBooksLoader from "./molecules/SearchBooksLoader";
-import BooksNotFound from "./molecules/BooksNotFound";
-import { useDebounce } from "../hooks/useDebounce";
-import BookModal from "./BookModal";
+import useSWR from "swr"
+import BookSpine from "@/components/BookSpine"
+import BookSearch from "@/components/molecules/BookSearch"
+import { BACKEND_URL } from "@/lib/constants"
+import { fetcher } from "@/lib/utils"
+import ErrorLoader from "./molecules/ErrorLoader"
+import RequestLoader from "./molecules/RequestLoader"
+import SearchBooksLoader from "./molecules/SearchBooksLoader"
+import BooksNotFound from "./molecules/BooksNotFound"
+import { useDebounce } from "../hooks/useDebounce"
+import BookModal from "./BookModal"
+import { useQueryState } from "nuqs"
 
 const API_ENDPOINTS = {
   BOOKS: `${BACKEND_URL}/books`,
@@ -31,127 +32,150 @@ const SEARCH_SWR_OPTIONS = {
   errorRetryCount: 3,
 };
 
-export default function BookShelf() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeBookId, setActiveBookId] = useState(null);
-  // ✅ Nuevo estado para rastrear si el libro activo está bloqueado
-  const [isBookBlocked, setIsBookBlocked] = useState(false);
-  // ✅ Nuevo estado para almacenar el resultado de la verificación de la respuesta
-  const [answerResult, setAnswerResult] = useState(null);
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+const BOOKS_PER_SHELF = 8
 
+export default function BookShelf() {
+  // Estados
+  const [filterParam, setFilterParam] = useQueryState("filter", {
+    defaultValue: "title",
+  })
+  const [searchTerm, setSearchTerm] = useQueryState("search")
+  const [activeBookId, setActiveBookId] = useState(null)
+  const debouncedSearchTerm = useDebounce(searchTerm, 500)
+
+  // Datos de libros
   const {
     data: booksData,
     error: booksError,
     isLoading: isBooksLoading,
   } = useSWR(API_ENDPOINTS.BOOKS, fetcher, SWR_OPTIONS);
 
-  const searchQueries = useMemo(() => {
-    if (!debouncedSearchTerm) return null;
-    return [
-      `${API_ENDPOINTS.TITLE_SEARCH}?title=${encodeURIComponent(debouncedSearchTerm)}`,
-      `${API_ENDPOINTS.AUTHOR_SEARCH}?author=${encodeURIComponent(debouncedSearchTerm)}`,
-    ];
-  }, [debouncedSearchTerm]);
+  // Búsqueda
+  const searchQuery = useMemo(() => {
+    if (!debouncedSearchTerm) return null
+
+    if (filterParam === "author") {
+      return `${API_ENDPOINTS.AUTHOR_SEARCH}?author=${encodeURIComponent(
+        debouncedSearchTerm
+      )}`
+    }
+
+    if (filterParam === "title") {
+      return `${API_ENDPOINTS.TITLE_SEARCH}?title=${encodeURIComponent(
+        debouncedSearchTerm
+      )}`
+    }
+
+    return null
+  }, [debouncedSearchTerm, filterParam])
 
   const {
     data: searchResults,
     error: searchError,
     isLoading: isSearching,
-  } = useSWR(
-    searchQueries,
-    (urls) => Promise.all(urls.map(fetcher)),
-    SEARCH_SWR_OPTIONS
-  );
+  } = useSWR(searchQuery, fetcher, SEARCH_SWR_OPTIONS)
 
+  // Libros a mostrar
   const displayedBooks = useMemo(() => {
-    if (!booksData) return [];
-    if (!debouncedSearchTerm) return booksData;
-    if (!searchResults) return [];
+    if (!booksData) return []
+    if (!debouncedSearchTerm) return booksData
+    if (!searchResults) return []
+    if (searchResults?.message?.includes("No books found")) return []
 
     return searchResults
-      .flat()
       .filter((result) => result?.id && result?.title && result?.author)
       .reduce((uniqueBooks, book) => {
         if (!uniqueBooks.some((b) => b.id === book.id)) {
           uniqueBooks.push(book);
         }
-        return uniqueBooks;
-      }, []);
-  }, [booksData, debouncedSearchTerm, searchResults]);
+        return uniqueBooks
+      }, [])
+  }, [booksData, debouncedSearchTerm, searchResults, filterParam])
 
+  // Libro activo para el modal
   const activeBookData = useMemo(() => {
     if (!booksData || !activeBookId) return null;
     return booksData.find((book) => book.id === activeBookId);
   }, [booksData, activeBookId]);
 
-  // ✅ Modifica handleBookClick para determinar isBlocked
-  const handleBookClick = (bookId) => {
-    setActiveBookId(bookId);
-    const clickedBook = booksData?.find((book) => book.id === bookId);
-    setIsBookBlocked(clickedBook?.status === 1); // Asume status 1 es bloqueado
-    setAnswerResult(null); // Resetear resultado al abrir un nuevo libro
-  };
+  // Handlers
+  const handleBookClick = (bookId) => setActiveBookId(bookId)
+  const handleCloseModal = () => setActiveBookId(null)
 
-  const handleCloseModal = () => {
-    setActiveBookId(null);
-    setIsBookBlocked(false);
-    setAnswerResult(null);
-  };
-
-  // ✅ Función para manejar el envío de la respuesta desde el modal
-  const handleAnswerSubmit = async (bookId, answer) => {
-    try {
-      const response = await fetch(`/api/books/${bookId}/verify-answer`, { // ⚠️ Reemplaza con tu endpoint real
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ answer }),
-      });
-      const data = await response.json();
-      setAnswerResult(data.isCorrect);
-      if (data.isCorrect) {
-        alert(`¡Correcto! Ahora puedes leer "${booksData.find(b => b.id === bookId)?.title}"`);
-        setIsBookBlocked(false); // Desbloquear el libro
-        // TODO: Lógica para mostrar el contenido del libro desbloqueado
-      } else {
-        // El BookModal mostrará que la respuesta es incorrecta (si implementamos esa lógica allí)
-      }
-    } catch (error) {
-      console.error('Error al verificar la respuesta:', error);
-      alert('Error al verificar la respuesta. Inténtalo de nuevo.');
+  // Organización en estanterías
+  const bookShelves = useMemo(() => {
+    if (!displayedBooks.length) return []
+    const shelves = []
+    for (
+      let i = 0;
+      i < Math.ceil(displayedBooks.length / BOOKS_PER_SHELF);
+      i++
+    ) {
+      shelves.push(
+        displayedBooks.slice(i * BOOKS_PER_SHELF, (i + 1) * BOOKS_PER_SHELF)
+      )
     }
-  };
+    return shelves
+  }, [displayedBooks])
 
-  if (booksError || searchError) {
-    return <ErrorLoader />;
-  }
-
-  if (isBooksLoading) {
-    return <RequestLoader />;
-  }
+  // Renderizado condicional (fuera del flujo principal de hooks)
+  if (booksError || searchError) return <ErrorLoader />
+  if (isBooksLoading) return <RequestLoader />
 
   return (
     <div className="relative min-h-[calc(100vh-16rem)] p-4 overflow-y-auto">
-      <BookSearch onSearch={setSearchTerm} />
+      <BookSearch
+        onSearch={setSearchTerm}
+        onFilter={setFilterParam}
+        filter={filterParam}
+        search={searchTerm}
+      />
 
-      <div className="bg-shelf p-4 rounded-lg shadow-xl">
-        <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-1 md:gap-2">
-          {isSearching ? (
-            <SearchBooksLoader />
-          ) : displayedBooks.length === 0 ? (
-            <BooksNotFound />
-          ) : (
-            displayedBooks.map((book) => (
-              <BookSpine
-                key={book.id}
-                book={book}
-                onClick={handleBookClick}
-              />
-            ))
-          )}
-        </div>
+      <div className="flex flex-col items-center mt-20">
+        {bookShelves.length > 0 ? (
+          bookShelves.map((shelf, shelfIndex) => (
+            <div
+              key={shelfIndex}
+              className="relative w-full max-w-6xl -mb-3"
+            >
+              {/* Parte superior de la estantería */}
+              <div className="absolute -top-4 left-0 right-0 h-7 bg-brown-500 rounded-t-md z-10 bg-amber-800 border border-black"></div>
+              {/* Parte inferior de la estantería */}
+              <div className="absolute bottom-0 left-0 right-0 h-7 bg-amber-800 rounded-b-md z-10 border border-black"></div>
+
+              {/* Lados de la estantería */}
+              <div className="absolute -top-4 -left-7 bottom-0 w-12 bg-amber-800 rounded-l-md "></div>
+              <div className="absolute -top-4 -right-7 bottom-0 w-12 bg-amber-800 rounded-r-md"></div>
+
+              {/* Libros */}
+              <div className="relative p-4 rounded-b-md shadow-lg bg-gray-900">
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2">
+                  {shelf.map((book) => (
+                    <BookSpine
+                      key={book.id}
+                      book={book}
+                      onClick={handleBookClick}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))
+        ) : isSearching ? (
+          <div className="relative w-full max-w-6xl">
+            <div className="absolute -top-4 left-0 right-0 h-4 bg-amber-900 rounded-t-md"></div>
+            <div className="bg-amber-100 p-8 rounded-b-md shadow-lg">
+              <SearchBooksLoader />
+            </div>
+          </div>
+        ) : (
+          <div className="relative w-full max-w-6xl">
+            <div className="absolute -top-4 left-0 right-0 h-4 bg-amber-900 rounded-t-md"></div>
+            <div className="bg-amber-100 p-8 rounded-b-md shadow-lg">
+              <BooksNotFound />
+            </div>
+          </div>
+        )}
       </div>
 
       {activeBookData && (
@@ -166,5 +190,5 @@ export default function BookShelf() {
         />
       )}
     </div>
-  );
+  )
 }

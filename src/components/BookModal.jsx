@@ -139,7 +139,7 @@ export default function BookModal({ isOpen, onClose, book, isBlocked, onAnswerSu
             }}
           >
             <motion.div
-              className="relative flex bg-amber-900 px-4 py-2 rounded-sm"
+              className="relative flex px-4 py-2 bg-[url(/book.webp)] bg-no-repeat bg-cover rounded-2xl"
               style={{
                 width: bookSize.width,
                 height: bookSize.height,
