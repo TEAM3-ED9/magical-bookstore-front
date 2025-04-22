@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import useSWR from "swr" // Añadido para realizar la llamada a la API.
 
 export default function BookModal({ isOpen, onClose, book }) {
-  const [questionData, setQuestionData] = useState(null) // Estado para almacenar la pregunta.
+  const [questionData, setQuestionData] = useState(null)
+  const [loadingQuestion, setLoadingQuestion] = useState(false)
+  const [userAnswer, setUserAnswer] = useState("")
+  const [isUnlocked, setIsUnlocked] = useState(false)
 
   const getBookSize = () => {
     if (typeof window !== "undefined") {
@@ -19,6 +21,57 @@ export default function BookModal({ isOpen, onClose, book }) {
 
   const bookSize = getBookSize()
 
+  const checkAnswer = () => {
+    const normalizedUser = userAnswer.trim().toLowerCase()
+    const normalizedCorrect = questionData?.answer?.trim().toLowerCase()
+    if (normalizedUser === normalizedCorrect) {
+      setIsUnlocked(true)
+    }
+  }
+
+  const renderRestrictedContent = () => {
+    if (loadingQuestion) {
+      return (
+        <div className="flex flex-col items-center justify-center text-center">
+          <div className="w-16 h-16 border-4 border-amber-300 border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="font-magic text-md text-amber-800">
+            The Pensieve is searching for a question...
+          </p>
+        </div>
+      )
+    }
+
+    if (!isUnlocked) {
+      return (
+        <div className="flex flex-col gap-4">
+          <p className="text-amber-800 font-magic text-md">
+            This book is not for beginners! You must ask a question before read it...
+          </p>
+          <p className="font-serif font-semibold text-emerald-900">{questionData?.question}</p>
+          <input
+            type="text"
+            className="border border-amber-700 p-2 rounded bg-amber-100 text-emerald-900 font-serif"
+            placeholder="Your answer..."
+            value={userAnswer}
+            onChange={(e) => setUserAnswer(e.target.value)}
+          />
+          <button
+            onClick={checkAnswer}
+            className="bg-emerald-800 text-white font-magic px-4 py-2 rounded hover:bg-emerald-700 transition"
+          >
+            Submit Answer
+          </button>
+        </div>
+      )
+    }
+
+    return (
+      <p className="text-emerald-900 font-serif">
+        {book?.description ?? ""}
+      </p>
+    )
+  }
+
   const bookContent = [
     {
       leftPage: {
@@ -27,29 +80,34 @@ export default function BookModal({ isOpen, onClose, book }) {
         index: 1,
       },
       rightPage: {
-        title: "Description",
-        content:
-          book?.status === 1 // Si el libro está bloqueado, mostrar la pregunta.
-            ? questionData
-              ? questionData.question // Si hay una pregunta, mostrarla.
-              : "Loading question..." // Si no se ha cargado la pregunta, mostrar cargando.
-            : book?.description ?? "",
+        title: book?.status === 1 ? "Restricted Section" : "Description",
+        content: book?.status === 1 ? renderRestrictedContent() : (book?.description ?? ""),
         index: 2,
       },
     },
   ]
 
-  // Llamada a la API para obtener la pregunta cuando el libro está bloqueado.
-  const fetchQuestion = async (bookId) => {
-    const response = await fetch(`http://localhost/api/questions/random?book_id=${bookId}`)
-    const data = await response.json()
-    setQuestionData(data) // Guardamos la pregunta en el estado.
-  }
-
   useEffect(() => {
-    if (book?.status === 1 && book?.id) { // Si el libro está bloqueado (status 1)
-      fetchQuestion(book.id) // Realizar la llamada a la API.
+    const fetchQuestion = async () => {
+      if (book?.status === 1) {
+        setLoadingQuestion(true)
+        setIsUnlocked(false)
+        setUserAnswer("")
+        try {
+          const response = await fetch(`http://localhost/api/questions/random?book_id=${book.id}`)
+          if (!response.ok) throw new Error("Error fetching question")
+          const data = await response.json()
+          setQuestionData(data)
+        } catch (err) {
+          console.error("Error fetching question:", err)
+          setQuestionData({ question: "Failed to load question.", answer: "" })
+        } finally {
+          setLoadingQuestion(false)
+        }
+      }
     }
+
+    fetchQuestion()
   }, [book])
 
   useEffect(() => {
@@ -71,9 +129,7 @@ export default function BookModal({ isOpen, onClose, book }) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
-          key="modal-container"
         >
-          {/* Overlay */}
           <motion.div
             className="absolute inset-0 bg-black/50 cursor-pointer"
             onClick={onClose}
@@ -89,7 +145,6 @@ export default function BookModal({ isOpen, onClose, book }) {
             }}
           />
 
-          {/* Book Container */}
           <motion.div
             className="relative z-10"
             style={{ perspective: "2000px" }}
@@ -110,17 +165,11 @@ export default function BookModal({ isOpen, onClose, book }) {
                 transformStyle: "preserve-3d",
                 boxShadow: "0 4px 30px rgba(0, 0, 0, 0.4)",
               }}
-              initial={{ rotateX: 30, rotateY: 0 }}
-              animate={{ rotateX: 0, rotateY: 0 }}
-              exit={{
-                rotateX: 30,
-                transition: { duration: 0.3, ease: "easeIn" },
-              }}
+              initial={{ rotateX: 30 }}
+              animate={{ rotateX: 0 }}
+              exit={{ rotateX: 30, transition: { duration: 0.3, ease: "easeIn" } }}
             >
-              <div
-                className="absolute inset-0 shadow-inner"
-                style={{ zIndex: -1 }}
-              />
+              <div className="absolute inset-0 shadow-inner" style={{ zIndex: -1 }} />
 
               <AnimatePresence mode="wait">
                 <motion.div
@@ -153,12 +202,7 @@ export default function BookModal({ isOpen, onClose, book }) {
                       {bookContent[0].leftPage.content}
                     </p>
                     <div className="mt-auto flex justify-between items-center pt-4 border-t border-amber-900/10">
-                      <button
-                        onClick={() => {}}
-                        disabled
-                        className="p-2 rounded-full text-emerald-900 opacity-30 cursor-not-allowed"
-                        aria-label="Previous page"
-                      >
+                      <button disabled className="p-2 rounded-full text-emerald-900 opacity-30 cursor-not-allowed">
                         <ChevronLeft size={20} />
                       </button>
                       <span className="text-sm text-emerald-800 font-serif">
@@ -185,19 +229,14 @@ export default function BookModal({ isOpen, onClose, book }) {
                     <h2 className="text-2xl font-serif font-bold text-emerald-900 mb-4">
                       {bookContent[0].rightPage.title}
                     </h2>
-                    <p className="text-emerald-900 font-serif flex-grow">
+                    <div className="text-emerald-900 font-serif flex-grow">
                       {bookContent[0].rightPage.content}
-                    </p>
+                    </div>
                     <div className="mt-auto flex justify-between items-center pt-4 border-t border-amber-900/10">
                       <span className="text-sm text-emerald-800 font-serif">
                         {bookContent[0].rightPage.index}
                       </span>
-                      <button
-                        onClick={() => {}}
-                        disabled
-                        className="p-2 rounded-full text-emerald-900 opacity-30 cursor-not-allowed"
-                        aria-label="Next page"
-                      >
+                      <button disabled className="p-2 rounded-full text-emerald-900 opacity-30 cursor-not-allowed">
                         <ChevronRight size={20} />
                       </button>
                     </div>
