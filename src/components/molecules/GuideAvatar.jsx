@@ -56,7 +56,7 @@ export default function GuideAvatar({ message }) {
   useEffect(() => {
     setIsVisible(true)
     setComment(
-      "Welcome to the Atrio of Rowena! All books are locked until you answer correctly. Be cautious—too many wrong answers will lock them permanently for a while."
+      "Welcome to the Atrio of Rowena! Some books are locked until you answer correctly. Be cautious—too many wrong answers will lock them permanently for a while."
     )
 
     // Start normal message cycle after welcome message hides
