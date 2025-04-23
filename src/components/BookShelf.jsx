@@ -2,8 +2,13 @@ import { useMemo, useState, useEffect } from "react"
 import useSWR from "swr"
 import BookSpine from "@/components/BookSpine"
 import BookSearch from "@/components/molecules/BookSearch"
-import { BACKEND_URL } from "@/lib/constants"
 import { fetcher } from "@/lib/utils"
+import {
+  BOOKS_PER_SHELF,
+  API_ENDPOINTS,
+  SWR_OPTIONS,
+  SEARCH_SWR_OPTIONS,
+} from "@/lib/constants"
 import ErrorLoader from "./molecules/ErrorLoader"
 import RequestLoader from "./molecules/RequestLoader"
 import SearchBooksLoader from "./molecules/SearchBooksLoader"
@@ -11,28 +16,6 @@ import BooksNotFound from "./molecules/BooksNotFound"
 import { useDebounce } from "../hooks/useDebounce"
 import BookModal from "./BookModal"
 import { useQueryState } from "nuqs"
-
-const API_ENDPOINTS = {
-  BOOKS: `${BACKEND_URL}/books`,
-  TITLE_SEARCH: `${BACKEND_URL}/books/title`,
-  AUTHOR_SEARCH: `${BACKEND_URL}/books/author`,
-}
-
-const SWR_OPTIONS = {
-  errorRetryInterval: 3000,
-  onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
-    if (retryCount >= 5) return
-    setTimeout(() => revalidate({ retryCount }), 5000)
-  },
-}
-
-const SEARCH_SWR_OPTIONS = {
-  revalidateIfStale: false,
-  revalidateOnFocus: false,
-  errorRetryCount: 3,
-}
-
-const BOOKS_PER_SHELF = 8
 
 export default function BookShelf({ onLoad }) {
   // Estados
@@ -122,12 +105,12 @@ export default function BookShelf({ onLoad }) {
   if (booksError || searchError) return <ErrorLoader />
   if (isBooksLoading) return <RequestLoader />
 
-  useEffect(() => {
-    onLoad(true)
-    return () => {
-      onLoad(false)
-    }
-  }, [onLoad])
+  // useEffect(() => {
+  //   onLoad(true)
+  //   return () => {
+  //     onLoad(false)
+  //   }
+  // }, [onLoad])
 
   return (
     <div className="relative min-h-[calc(100vh-16rem)] p-4 overflow-y-auto">

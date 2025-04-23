@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { fetcher } from "@/lib/utils"
+import { API_ENDPOINTS, SWR_OPTIONS } from "@/lib/constants"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import useSWR from "swr"
+import { useCustomMutation } from "../lib/utils"
 
 export default function BookModal({ isOpen, onClose, book }) {
   const [questionData, setQuestionData] = useState(null)
@@ -22,15 +26,33 @@ export default function BookModal({ isOpen, onClose, book }) {
 
   const bookSize = getBookSize()
 
+  const { trigger } = useCustomMutation(API_ENDPOINTS.VALIDATE_QUESTION, {
+    fetcher,
+    method: "POST",
+  })
+
   const checkAnswer = () => {
-    const normalizedUser = userAnswer.trim().toLowerCase()
-    const normalizedCorrect = questionData?.answer?.trim().toLowerCase()
-    if (normalizedUser === normalizedCorrect) {
-      setIsUnlocked(true)
-      setAnswerIncorrect(false)
-    } else {
-      setAnswerIncorrect(true)
+    const handleCheckAnswer = async () => {
+      const answer = userAnswer.trim()
+      const normalizedUserAnswer =
+        answer.charAt(0).toUpperCase() + answer.slice(1)
+      try {
+        const data = await trigger({
+          body: JSON.stringify({
+            question_id: questionData?.id,
+            book_id: book?.id,
+            answer: normalizedUserAnswer,
+          }),
+        })
+        if (data) {
+          setIsUnlocked(data.message.includes("Book unlocked successfully"))
+        }
+      } catch (error) {
+        console.error("Error validating answer:", error)
+      }
     }
+
+    handleCheckAnswer()
   }
 
   const renderRestrictedContent = () => {
@@ -53,33 +75,46 @@ export default function BookModal({ isOpen, onClose, book }) {
       return (
         <div className="flex flex-col gap-4">
           <p className="text-amber-800 font-magic text-md">
-            This book is not for beginners! You must ask a question before read it...
+            This book is not for beginners! You must ask a question before read
+            it...
           </p>
-          <p className="font-serif font-semibold text-emerald-900">{questionData?.question}</p>
+          <p className="font-serif font-semibold text-emerald-900">
+            {questionData?.question}
+          </p>
           <input
             type="text"
             className="border border-amber-700 p-2 rounded bg-amber-100 text-emerald-900 font-serif"
             placeholder="Your answer..."
             value={userAnswer}
             onChange={(e) => setUserAnswer(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                checkAnswer()
+              }
+            }}
+            aria-label="Your answer"
           />
           <button
             onClick={checkAnswer}
             className="bg-emerald-800 text-white font-magic px-4 py-2 rounded hover:bg-emerald-700 transition"
+            aria-label="Send Owl"
           >
             Send Owl
           </button>
           {answerIncorrect && (
-            <p className="text-red-600 text-sm mt-2">Incorrect answer. You are not allowed to read the book yet!</p>
+            <p
+              className="text-red-600 text-sm mt-2"
+              role="alert"
+            >
+              Incorrect answer. You are not allowed to read the book yet!
+            </p>
           )}
         </div>
       )
     }
 
     return (
-      <p className="text-emerald-900 font-serif">
-        {book?.description ?? ""}
-      </p>
+      <p className="text-emerald-900 font-serif">{book?.description ?? ""}</p>
     )
   }
 
@@ -92,35 +127,42 @@ export default function BookModal({ isOpen, onClose, book }) {
       },
       rightPage: {
         title: book?.status === 1 ? "Restricted Section" : "Description",
-        content: book?.status === 1 ? renderRestrictedContent() : (book?.description ?? ""),
+        content:
+          book?.status === 1
+            ? renderRestrictedContent()
+            : book?.description ?? "",
         index: 2,
       },
     },
   ]
 
-  useEffect(() => {
-    const fetchQuestion = async () => {
-      if (book?.status === 1) {
-        setLoadingQuestion(true)
-        setIsUnlocked(false)
-        setUserAnswer("")
-        setAnswerIncorrect(false)
-        try {
-          const response = await fetch(`http://localhost/api/questions/random?book_id=${book.id}`)
-          if (!response.ok) throw new Error("Error fetching question")
-          const data = await response.json()
-          setQuestionData(data)
-        } catch (err) {
-          console.error("Error fetching question:", err)
-          setQuestionData({ question: "Failed to load question.", answer: "" })
-        } finally {
-          setLoadingQuestion(false)
-        }
-      }
+  const { data, error, isLoading } = useSWR(
+    book?.status === 1 ? API_ENDPOINTS.GET_QUESTION + book.id : null,
+    fetcher,
+    {
+      ...SWR_OPTIONS,
+      revalidateOnFocus: false,
     }
+  )
 
-    fetchQuestion()
-  }, [book])
+  useEffect(() => {
+    if (book?.status === 1) {
+      setLoadingQuestion(true)
+      setIsUnlocked(false)
+      setUserAnswer("")
+      setAnswerIncorrect(false)
+
+      if (data) {
+        setQuestionData(data)
+      }
+
+      if (error) {
+        setQuestionData({ question: "Failed to load question.", answer: "" })
+      }
+
+      setLoadingQuestion(isLoading)
+    }
+  }, [book, data, error, isLoading])
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -179,9 +221,15 @@ export default function BookModal({ isOpen, onClose, book }) {
               }}
               initial={{ rotateX: 30 }}
               animate={{ rotateX: 0 }}
-              exit={{ rotateX: 30, transition: { duration: 0.3, ease: "easeIn" } }}
+              exit={{
+                rotateX: 30,
+                transition: { duration: 0.3, ease: "easeIn" },
+              }}
             >
-              <div className="absolute inset-0 shadow-inner" style={{ zIndex: -1 }} />
+              <div
+                className="absolute inset-0 shadow-inner"
+                style={{ zIndex: -1 }}
+              />
 
               <AnimatePresence mode="wait">
                 <motion.div
@@ -214,7 +262,10 @@ export default function BookModal({ isOpen, onClose, book }) {
                       {bookContent[0].leftPage.content}
                     </p>
                     <div className="mt-auto flex justify-between items-center pt-4 border-t border-amber-900/10">
-                      <button disabled className="p-2 rounded-full text-emerald-900 opacity-30 cursor-not-allowed">
+                      <button
+                        disabled
+                        className="p-2 rounded-full text-emerald-900 opacity-30 cursor-not-allowed"
+                      >
                         <ChevronLeft size={20} />
                       </button>
                       <span className="text-sm text-emerald-800 font-serif">
@@ -248,7 +299,10 @@ export default function BookModal({ isOpen, onClose, book }) {
                       <span className="text-sm text-emerald-800 font-serif">
                         {bookContent[0].rightPage.index}
                       </span>
-                      <button disabled className="p-2 rounded-full text-emerald-900 opacity-30 cursor-not-allowed">
+                      <button
+                        disabled
+                        className="p-2 rounded-full text-emerald-900 opacity-30 cursor-not-allowed"
+                      >
                         <ChevronRight size={20} />
                       </button>
                     </div>
