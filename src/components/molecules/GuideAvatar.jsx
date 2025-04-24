@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { MESSAGE_DURATION_MS } from "constants"
 
 const messages = [
   "Young wizard, the secrets of the books await your wit!",
@@ -49,7 +50,7 @@ export default function GuideAvatar({ message }) {
     setComment(helpMessages[newIndex])
 
     // Hide after 3 seconds
-    setTimeout(() => setIsVisible(false), 3000)
+    setTimeout(() => setIsVisible(false), MESSAGE_DURATION_MS)
   }
 
   // 🎉 Initial welcome message on mount
@@ -60,7 +61,7 @@ export default function GuideAvatar({ message }) {
     )
 
     // Start normal message cycle after welcome message hides
-    const timer = setTimeout(() => setMessageIndex(0), 5000)
+    const timer = setTimeout(() => setMessageIndex(0), MESSAGE_DURATION_MS)
     return () => clearTimeout(timer)
   }, [])
 
@@ -71,7 +72,7 @@ export default function GuideAvatar({ message }) {
       setComment(message)
 
       // Hide dynamic message after 3 seconds
-      const timer = setTimeout(() => setIsVisible(false), 3000)
+      const timer = setTimeout(() => setIsVisible(false), MESSAGE_DURATION_MS)
       return () => clearTimeout(timer)
     }
 
@@ -92,11 +93,11 @@ export default function GuideAvatar({ message }) {
           // 🛑 Stop cycle at last message and hide after 3 seconds
           if (newIndex === messages.length - 1) {
             setLastMessage(true)
-            setTimeout(() => setIsVisible(false), 3000)
+            setTimeout(() => setIsVisible(false), MESSAGE_DURATION_MS)
           }
           return newIndex
         })
-      }, 3000)
+      }, MESSAGE_DURATION_MS)
 
       return () => clearTimeout(timer)
     }
@@ -107,11 +108,11 @@ export default function GuideAvatar({ message }) {
     const showTimer = setTimeout(() => {
       setIsVisible(true)
       setComment("You can search books by title or author...")
-    }, 2000 + messages.length * 3000) // After all normal messages
+    }, MESSAGE_DURATION_MS + messages.length * MESSAGE_DURATION_MS) // After all normal messages
 
     const hideTimer = setTimeout(
       () => setIsVisible(false),
-      5000 + messages.length * 3000
+      MESSAGE_DURATION_MS + messages.length * MESSAGE_DURATION_MS
     )
 
     return () => {
@@ -127,22 +128,22 @@ export default function GuideAvatar({ message }) {
         onClick={handleHelpClick}
       >
         {/* 🖼️ Guide avatar images */}
-        <div className="relative size-20">
+        <div className="relative size-20 sm:size-32">
           <img
             src="/frame.webp"
             alt="Frame"
-            className="size-20 absolute"
+            className="size-20 sm:size-32 absolute"
           />
           <img
             src="/rowena.webp"
             alt="Rowena"
-            className="w-12 h-12 absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 rounded-full"
+            className="size-12 sm:size-20 absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 rounded-full"
           />
         </div>
 
         {/* 🎬 Dynamic message overlay (e.g., unlock errors) */}
         {message && (
-          <div className="absolute left-24 top-1/2 -translate-y-1/2 rounded-lg text-white">
+          <div className="absolute left-24 sm:left-36 top-1/2 -translate-y-1/2 rounded-lg text-white">
             <div className="relative">
               <span className="inline-block py-3 px-5 text-lg bg-black rounded-lg shadow-md min-w-68 text-nowrap max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg">
                 {comment}
@@ -155,7 +156,7 @@ export default function GuideAvatar({ message }) {
 
         {/* 📚 Normal/help messages */}
         {!message && isVisible && (
-          <div className="absolute left-24 top-1/2 -translate-y-1/2 rounded-lg text-white">
+          <div className="absolute left-24 sm:left-36 top-1/2 -translate-y-1/2 rounded-lg text-white">
             <div className="relative">
               <span className="inline-block py-3 px-5 text-lg bg-black rounded-lg shadow-md min-w-68 w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg">
                 {comment}
