@@ -1,14 +1,14 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { fetcher, getBookSize, useCustomMutation } from "@/lib/utils";
-import { API_ENDPOINTS, SWR_OPTIONS } from "@/lib/constants";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import useSWR from "swr";
-import { useBookUnlock } from "../contexts/BookUnlock";
-import { formatTime } from "../lib/utils";
-import { CardContainer } from "@/components/ui/3d-card";
+import { useEffect, useState, useCallback, useMemo } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { fetcher, getBookSize, useCustomMutation } from "@/lib/utils"
+import { API_ENDPOINTS, SWR_OPTIONS } from "@/lib/constants"
+import { ChevronLeft, ChevronRight } from "lucide-react"
+import useSWR from "swr"
+import { useBookUnlock } from "../contexts/BookUnlock"
+import { formatTime } from "../lib/utils"
+import { CardContainer } from "@/components/ui/3d-card"
 import { MESSAGE_DURATION_MS } from "../lib/constants"
-
+import { TextGenerateEffect } from "@/components/ui/text-generate-effect"
 
 export default function BookModal({
   isOpen,
@@ -22,6 +22,9 @@ export default function BookModal({
   const [userAnswer, setUserAnswer] = useState("")
   const [answerIncorrect, setAnswerIncorrect] = useState(false)
   const [buttonText, setButtonText] = useState("Summon the Owl")
+  const [hasBeenJustUnlocked, setHasBeenJustUnlocked] = useState(false)
+  const [showEffect, setShowEffect] = useState(false)
+
   const {
     booksUnlocked,
     retryCounts,
@@ -132,9 +135,9 @@ export default function BookModal({
 
       if (data?.message?.includes("Book unlocked successfully")) {
         unlockBook(book.id)
-        onSendMessage(
-          "Well done! The book is unlocked. But remember, leaving the library will reset all books"
-        )
+        setHasBeenJustUnlocked(true)
+        setShowEffect(true)
+        onSendMessage("")
       }
     } catch (error) {
       console.error("Error validating answer:", error)
@@ -159,6 +162,7 @@ export default function BookModal({
         onSendMessage("We must clear all this messy library...")
         onMaxFailedAttempts()
         onClose()
+        setShowEffect(false)
       }
     }
   }, [
@@ -172,6 +176,7 @@ export default function BookModal({
     onMaxFailedAttempts,
     isUnlocked,
     isInCooldown,
+    onSendMessage,
   ])
 
   useEffect(() => {
@@ -188,8 +193,10 @@ export default function BookModal({
 
       const texts = ["Summon the Owl", "Send the Owl", "Dispatch the Owl"]
       setButtonText(texts[Math.floor(Math.random() * 3)])
+    } else {
+      setHasBeenJustUnlocked(false) // Reseteamos al cerrar o si ya estaba desbloqueado
     }
-  }, [isOpen, isUnlocked, isInCooldown, onSendMessage])
+  }, [isOpen, isUnlocked, isInCooldown, onSendMessage, book?.status])
 
   const restrictedContent = useMemo(() => {
     if (isInCooldown) {
@@ -229,7 +236,7 @@ export default function BookModal({
       )
     }
 
-    if (!isUnlocked) {
+    if (!isUnlocked && !isInCooldown) {
       return (
         <div className="flex flex-col gap-4">
           <p className="text-amber-800 font-magic text-md">
@@ -276,9 +283,7 @@ export default function BookModal({
       )
     }
 
-    return (
-      <p className="text-emerald-900 font-serif">{book?.description ?? ""}</p>
-    )
+    return null
   }, [
     isInCooldown,
     remainingTime,
@@ -289,7 +294,6 @@ export default function BookModal({
     answerIncorrect,
     retryCount,
     checkAnswer,
-    book?.description,
     buttonText,
   ])
 
@@ -324,6 +328,7 @@ export default function BookModal({
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
         onClose()
+        setShowEffect(false)
       }
     }
 
@@ -341,12 +346,11 @@ export default function BookModal({
             className="absolute inset-0 bg-black/50 cursor-pointer"
             onClick={onClose}
           />
-
           <motion.div
             className="relative z-10"
             style={{ perspective: "2000px" }}
           >
-            <CardContainer> {/* Envolvemos el libro con CardContainer */}
+            <CardContainer>
               <motion.div
                 className="relative flex px-4 py-2 bg-[url(/book.webp)] bg-no-repeat bg-cover rounded-2xl"
                 style={{
@@ -382,7 +386,7 @@ export default function BookModal({
                       <h2 className="text-2xl font-serif font-bold text-emerald-900 mb-4">
                         {bookContent[0].leftPage.title}
                       </h2>
-                      <div className="text-emerald-900 font-serif flex-grow overflow-y-auto">
+                      <div className="text-gray-700 font-serif flex-grow overflow-y-auto">
                         {bookContent[0].leftPage.content}
                       </div>
                       <div className="mt-auto flex justify-between items-center pt-4 border-t border-amber-900/10">
@@ -406,8 +410,15 @@ export default function BookModal({
                       <h2 className="text-2xl font-serif font-bold text-emerald-900 mb-4">
                         {bookContent[0].rightPage.title}
                       </h2>
-                      <div className="text-emerald-900 font-serif flex-grow overflow-y-auto">
-                        {bookContent[0].rightPage.content}
+                      <div className="text-gray-700 font-serif flex-grow overflow-y-auto">
+                        {isUnlocked && !showEffect && book?.description}
+                        {isUnlocked && showEffect && (
+                          <TextGenerateEffect
+                            words={book?.description}
+                            className="mt-4"
+                          />
+                        )}
+                        {!isUnlocked && bookContent[0].rightPage.content}
                       </div>
                       <div className="mt-auto flex justify-between items-center pt-4 border-t border-amber-900/10">
                         <span className="text-sm text-emerald-800 font-serif">
