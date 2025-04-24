@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { MESSAGE_DURATION_MS } from "constants"
+import { MESSAGE_DURATION_MS } from "../../lib/constants"
 
 const messages = [
   "Young wizard, the secrets of the books await your wit!",
