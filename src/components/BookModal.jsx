@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { fetcher, getBookSize, useCustomMutation } from "@/lib/utils"; // Combined imports
+import { fetcher, getBookSize, useCustomMutation } from "@/lib/utils";
 import { API_ENDPOINTS, SWR_OPTIONS } from "@/lib/constants";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import useSWR from "swr";
-import { useBookUnlock } from "../contexts/BookUnlock"; // Corrected path if needed
+import { useBookUnlock } from "../contexts/BookUnlock";
 import { formatTime } from "../lib/utils";
+import { CardContainer } from "@/components/ui/3d-card"; // Importa el componente 3DCard
 
 export default function BookModal({
   isOpen,
@@ -236,22 +237,18 @@ export default function BookModal({
           <p className="font-serif font-semibold text-emerald-900">
             {questionData?.question || "Loading riddle..."}{" "}
           </p>
-          <p className="font-serif font-semibold text-emerald-900">{questionData?.question}</p>
           <input
             type="text"
             className="border border-amber-700 p-2 rounded bg-amber-100 text-emerald-900 font-serif"
             placeholder="Your answer..."
             value={userAnswer}
             onChange={(e) => setUserAnswer(e.target.value)}
-<<<<<<< HEAD
-=======
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 checkAnswer();
               }
             }}
             aria-label="Your answer"
->>>>>>> 273b6083ce48cc8229fcbdae36842efc1e6dad70
           />
           {answerIncorrect && (
             <p className="text-red-600 text-sm -mt-3" role="alert">
@@ -275,15 +272,8 @@ export default function BookModal({
     }
 
     return (
-<<<<<<< HEAD
-      <p className="text-emerald-900 font-serif">
-        {book?.description ?? ""}
-      </p>
-    )
-=======
       <p className="text-emerald-900 font-serif">{book?.description ?? ""}</p>
     );
->>>>>>> 273b6083ce48cc8229fcbdae36842efc1e6dad70
   }, [
     isInCooldown,
     remainingTime,
@@ -351,71 +341,85 @@ export default function BookModal({
             className="relative z-10"
             style={{ perspective: "2000px" }}
           >
-            <motion.div
-              className="relative flex px-4 py-2 bg-[url(/book.webp)] bg-no-repeat bg-cover rounded-2xl"
-              style={{
-                width: bookSize.width,
-                height: bookSize.height,
-                transformStyle: "preserve-3d",
-                boxShadow: "0 4px 30px rgba(0, 0, 0, 0.4)",
-              }}
-            >
-              <div className="absolute inset-0 shadow-inner" style={{ zIndex: -1 }} />
+            <CardContainer> {/* Envolvemos el libro con CardContainer */}
+              <motion.div
+                className="relative flex px-4 py-2 bg-[url(/book.webp)] bg-no-repeat bg-cover rounded-2xl"
+                style={{
+                  width: bookSize.width,
+                  height: bookSize.height,
+                  transformStyle: "preserve-3d",
+                  boxShadow: "0 4px 30px rgba(0, 0, 0, 0.4)",
+                }}
+                initial={{ rotateY: -90 }}
+                animate={{ rotateY: 0 }}
+                exit={{ rotateY: 90 }}
+                transition={{ duration: 0.6, ease: "easeInOut" }}
+              >
+                <div
+                  className="absolute inset-0 shadow-inner"
+                  style={{ zIndex: -1 }}
+                />
 
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={`book-${book?.id}`}
-                  className="flex w-full h-full"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {/* Left Page */}
+                <AnimatePresence mode="wait">
                   <motion.div
-                    className="w-1/2 h-full bg-amber-50 p-8 flex flex-col border-r-2 rounded-xl border-amber-900/20 overflow-y-auto"
-                    style={{ transformOrigin: "right center" }}
+                    key={`book-${book?.id}`}
+                    className="flex w-full h-full"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
                   >
-                    <h2 className="text-2xl font-serif font-bold text-emerald-900 mb-4">
-                      {bookContent[0].leftPage.title}
-                    </h2>
-                    <div className="text-emerald-900 font-serif flex-grow overflow-y-auto">
-                      {" "}
-                      {bookContent[0].leftPage.content}
-                    </div>
-                    <div className="mt-auto flex justify-between items-center pt-4 border-t border-amber-900/10">
-                      <button disabled className="p-2 rounded-full text-emerald-900 opacity-30 cursor-not-allowed">
-                        <ChevronLeft size={20} />
-                      </button>
-                      <span className="text-sm text-emerald-800 font-serif">
-                        {bookContent[0].leftPage.index}
-                      </span>
-                    </div>
-                  </motion.div>
+                    {/* Left Page */}
+                    <motion.div
+                      className="w-1/2 h-full bg-amber-50 p-8 flex flex-col border-r-2 rounded-xl border-amber-900/20 overflow-y-auto"
+                      style={{ transformOrigin: "right center" }}
+                    >
+                      <h2 className="text-2xl font-serif font-bold text-emerald-900 mb-4">
+                        {bookContent[0].leftPage.title}
+                      </h2>
+                      <div className="text-emerald-900 font-serif flex-grow overflow-y-auto">
+                        {bookContent[0].leftPage.content}
+                      </div>
+                      <div className="mt-auto flex justify-between items-center pt-4 border-t border-amber-900/10">
+                        <button
+                          disabled
+                          className="p-2 rounded-full text-emerald-900 opacity-30 cursor-not-allowed"
+                        >
+                          <ChevronLeft size={20} />
+                        </button>
+                        <span className="text-sm text-emerald-800 font-serif">
+                          {bookContent[0].leftPage.index}
+                        </span>
+                      </div>
+                    </motion.div>
 
-                  {/* Right Page */}
-                  <motion.div
-                    className="w-1/2 h-full bg-amber-50 p-8 flex flex-col border-l-2 rounded-xl border-amber-900/20 overflow-y-auto"
-                    style={{ transformOrigin: "left center" }}
-                  >
-                    <h2 className="text-2xl font-serif font-bold text-emerald-900 mb-4">
-                      {bookContent[0].rightPage.title}
-                    </h2>
-                    <div className="text-emerald-900 font-serif flex-grow overflow-y-auto">
-                      {bookContent[0].rightPage.content}
-                    </div>
-                    <div className="mt-auto flex justify-between items-center pt-4 border-t border-amber-900/10">
-                      <span className="text-sm text-emerald-800 font-serif">
-                        {bookContent[0].rightPage.index}
-                      </span>
-                      <button disabled className="p-2 rounded-full text-emerald-900 opacity-30 cursor-not-allowed">
-                        <ChevronRight size={20} />
-                      </button>
-                    </div>
+                    {/* Right Page */}
+                    <motion.div
+                      className="w-1/2 h-full bg-amber-50 p-8 flex flex-col border-l-2 rounded-xl border-amber-900/20 overflow-y-auto"
+                      style={{ transformOrigin: "left center" }}
+                    >
+                      <h2 className="text-2xl font-serif font-bold text-emerald-900 mb-4">
+                        {bookContent[0].rightPage.title}
+                      </h2>
+                      <div className="text-emerald-900 font-serif flex-grow overflow-y-auto">
+                        {bookContent[0].rightPage.content}
+                      </div>
+                      <div className="mt-auto flex justify-between items-center pt-4 border-t border-amber-900/10">
+                        <span className="text-sm text-emerald-800 font-serif">
+                          {bookContent[0].rightPage.index}
+                        </span>
+                        <button
+                          disabled
+                          className="p-2 rounded-full text-emerald-900 opacity-30 cursor-not-allowed"
+                        >
+                          <ChevronRight size={20} />
+                        </button>
+                      </div>
+                    </motion.div>
                   </motion.div>
-                </motion.div>
-              </AnimatePresence>
-            </motion.div>
+                </AnimatePresence>
+              </motion.div>
+            </CardContainer>
           </motion.div>
         </motion.div>
       )}
