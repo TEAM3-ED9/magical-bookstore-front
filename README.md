@@ -6,16 +6,21 @@ This project is a magical book fronted inspired by the Harry Potter universe. It
 
 ## 🎯 Objectives
 
-* Allow users to **search and consult** information about available books.
-* Implement a system of **magical questions** to protect access to certain books.
-* Facilitate the **unlocking of books** by correctly answering the magical questions.
+- Allow users to **search and consult** information about available books.
+- Implement a system of **magical questions** to protect access to certain books.
+- Facilitate the **unlocking of books** by correctly answering the magical questions.
 
 ## 🛠️ Technologies
 
-* **Frontend:** Javascript, React
-* **Libraries:** SWR, Nuqs
-* **Version Control:** Git
-* **Repository:** GitHub
+- **Frontend:** Javascript, React
+- **Libraries:** SWR, Nuqs, TailwindCSS, Framer Motion, SWR, Lucide React
+- **Version Control:** Git
+- **Repository:** GitHub
+
+## 📂 Project Documentation
+
+- **General Use Case Diagram**: [docs/InteractionFlowDiagram.png](docs/InteractionFlowDiagram.png)
+- **Components Design**: [docs/ComponentDesign.png](docs/ComponentDesign.png)
 
 ## ⚙️ Installation
 
@@ -23,8 +28,8 @@ Follow these steps to set up the project in your local environment:
 
 **Prerequisites:**
 
-* Node v18
-* Git
+- Node v18
+- Git
 
 **Installation Steps:**
 
@@ -56,13 +61,13 @@ Follow these steps to set up the project in your local environment:
 
 5.  **Configure the backend connection:**
 
-    * Create a `.env` file and put::
+    - Create a `.env` file and put::
 
     ```bash
     VITE_BACKEND_URL=http://127.0.0.1:8000 (here goes your backend api route)
     ```
 
-8.  **Run the local server:**
+6.  **Run the local server:**
 
     ```bash
     npm run dev
