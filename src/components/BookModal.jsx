@@ -1,14 +1,14 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { fetcher, getBookSize, useCustomMutation } from "@/lib/utils";
-import { API_ENDPOINTS, SWR_OPTIONS } from "@/lib/constants";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import useSWR from "swr";
-import { useBookUnlock } from "../contexts/BookUnlock";
-import { formatTime } from "../lib/utils";
-import { CardContainer } from "@/components/ui/3d-card";
-import { MESSAGE_DURATION_MS } from "../lib/constants";
-import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
+import { useEffect, useState, useCallback, useMemo } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { fetcher, getBookSize, useCustomMutation } from "@/lib/utils"
+import { API_ENDPOINTS, SWR_OPTIONS } from "@/lib/constants"
+import { ChevronLeft, ChevronRight } from "lucide-react"
+import useSWR from "swr"
+import { useBookUnlock } from "../contexts/BookUnlock"
+import { formatTime } from "../lib/utils"
+import { CardContainer } from "@/components/ui/3d-card"
+import { MESSAGE_DURATION_MS } from "../lib/constants"
+import { TextGenerateEffect } from "@/components/ui/text-generate-effect"
 
 export default function BookModal({
   isOpen,
@@ -17,40 +17,41 @@ export default function BookModal({
   onSendMessage,
   book,
 }) {
-  const [remainingTime, setRemainingTime] = useState("");
-  const [questionData, setQuestionData] = useState(null);
-  const [userAnswer, setUserAnswer] = useState("");
-  const [answerIncorrect, setAnswerIncorrect] = useState(false);
-  const [buttonText, setButtonText] = useState("Summon the Owl");
-  const [unlockMessage, setUnlockMessage] = useState("");
-  const [hasBeenJustUnlocked, setHasBeenJustUnlocked] = useState(false); // Nuevo estado para rastrear si se desbloqueó en esta sesión
+  const [remainingTime, setRemainingTime] = useState("")
+  const [questionData, setQuestionData] = useState(null)
+  const [userAnswer, setUserAnswer] = useState("")
+  const [answerIncorrect, setAnswerIncorrect] = useState(false)
+  const [buttonText, setButtonText] = useState("Summon the Owl")
+  const [hasBeenJustUnlocked, setHasBeenJustUnlocked] = useState(false)
+  const [showEffect, setShowEffect] = useState(false)
+
   const {
     booksUnlocked,
     retryCounts,
     cooldownEndTimes,
     unlockBook,
     incrementRetryCount,
-  } = useBookUnlock();
+  } = useBookUnlock()
 
   const isUnlocked = useMemo(
     () => booksUnlocked.some((b) => b.bookId === book?.id),
     [booksUnlocked, book?.id]
-  );
+  )
 
   const retryCount = useMemo(
     () => retryCounts[book?.id] || 0,
     [retryCounts, book?.id]
-  );
+  )
 
   const cooldownEndTime = useMemo(
     () => cooldownEndTimes[book?.id] || null,
     [cooldownEndTimes, book?.id]
-  );
+  )
 
   const isInCooldown = useMemo(
     () => retryCount >= 3 && cooldownEndTime && cooldownEndTime > Date.now(),
     [retryCount, cooldownEndTime]
-  );
+  )
 
   const questionQuery = useMemo(
     () =>
@@ -58,7 +59,7 @@ export default function BookModal({
         ? API_ENDPOINTS.GET_QUESTION + book.id
         : null,
     [book, isUnlocked, isInCooldown]
-  );
+  )
 
   const {
     data: fetchedQuestionData,
@@ -68,60 +69,60 @@ export default function BookModal({
     ...SWR_OPTIONS,
     revalidateOnFocus: false,
     onSuccess: (data) => {
-      setQuestionData(data);
-      setUserAnswer("");
-      setAnswerIncorrect(false);
+      setQuestionData(data)
+      setUserAnswer("")
+      setAnswerIncorrect(false)
     },
     onError: () => {
       if (questionQuery) {
-        setQuestionData({ question: "Failed to load question.", answer: "" });
+        setQuestionData({ question: "Failed to load question.", answer: "" })
       } else {
-        setQuestionData(null);
+        setQuestionData(null)
       }
     },
-  });
+  })
 
   useEffect(() => {
-    let timerInterval = null;
+    let timerInterval = null
 
     if (isInCooldown && cooldownEndTime) {
       const updateTimer = () => {
-        const now = Date.now();
-        const msLeft = cooldownEndTime - now;
+        const now = Date.now()
+        const msLeft = cooldownEndTime - now
 
         if (msLeft <= 0) {
-          setRemainingTime("00:00");
-          clearInterval(timerInterval);
+          setRemainingTime("00:00")
+          clearInterval(timerInterval)
         } else {
-          setRemainingTime(formatTime(msLeft));
+          setRemainingTime(formatTime(msLeft))
         }
-      };
+      }
 
-      updateTimer();
-      timerInterval = setInterval(updateTimer, 1000);
+      updateTimer()
+      timerInterval = setInterval(updateTimer, 1000)
     } else {
-      setRemainingTime("");
+      setRemainingTime("")
     }
 
     return () => {
       if (timerInterval) {
-        clearInterval(timerInterval);
+        clearInterval(timerInterval)
       }
-    };
-  }, [isInCooldown, cooldownEndTime, book?.id]);
+    }
+  }, [isInCooldown, cooldownEndTime, book?.id])
 
   const { trigger } = useCustomMutation(API_ENDPOINTS.VALIDATE_QUESTION, {
     fetcher,
     method: "POST",
-  });
+  })
 
   const checkAnswer = useCallback(async () => {
-    const answer = userAnswer.trim();
+    const answer = userAnswer.trim()
     if (!answer || !questionData?.id || !book?.id || isUnlocked || isInCooldown)
-      return;
+      return
 
     const normalizedUserAnswer =
-      answer.charAt(0).toUpperCase() + answer.slice(1);
+      answer.charAt(0).toUpperCase() + answer.slice(1)
 
     try {
       const data = await trigger({
@@ -130,42 +131,38 @@ export default function BookModal({
           book_id: book.id,
           answer: normalizedUserAnswer,
         }),
-      });
+      })
 
       if (data?.message?.includes("Book unlocked successfully")) {
-        unlockBook(book.id);
-        setUnlockMessage(
-          "Well done! The book is unlocked. But remember, leaving the library will reset all books"
-        );
-        setHasBeenJustUnlocked(true); // Marcamos que se desbloqueó en esta sesión
-        setTimeout(() => {
-          setUnlockMessage("");
-        }, 5000);
-        onSendMessage("");
+        unlockBook(book.id)
+        setHasBeenJustUnlocked(true)
+        setShowEffect(true)
+        onSendMessage("")
       }
     } catch (error) {
-      console.error("Error validating answer:", error);
+      console.error("Error validating answer:", error)
 
-      const currentRetryCount = retryCounts[book.id] || 0;
-      incrementRetryCount(book.id);
-      setAnswerIncorrect(true);
+      const currentRetryCount = retryCounts[book.id] || 0
+      incrementRetryCount(book.id)
+      setAnswerIncorrect(true)
 
       if (currentRetryCount + 1 === 1) {
-        onSendMessage("Be careful! That's your first wrong answer.");
+        onSendMessage("Be careful! That's your first wrong answer.")
         setTimeout(() => {
-          onSendMessage("");
-        }, MESSAGE_DURATION_MS);
+          onSendMessage("")
+        }, MESSAGE_DURATION_MS)
       } else if (currentRetryCount + 1 === 2) {
-        onSendMessage("Careful now—only one more try before this book locks!");
+        onSendMessage("Careful now—only one more try before this book locks!")
         setTimeout(() => {
-          onSendMessage("");
-        }, MESSAGE_DURATION_MS);
+          onSendMessage("")
+        }, MESSAGE_DURATION_MS)
       }
 
       if (currentRetryCount + 1 >= 3) {
-        onSendMessage("We must clear all this messy library...");
-        onMaxFailedAttempts();
-        onClose();
+        onSendMessage("We must clear all this messy library...")
+        onMaxFailedAttempts()
+        onClose()
+        setShowEffect(false)
       }
     }
   }, [
@@ -180,26 +177,26 @@ export default function BookModal({
     isUnlocked,
     isInCooldown,
     onSendMessage,
-  ]);
+  ])
 
   useEffect(() => {
     if (isOpen && !isUnlocked && !isInCooldown) {
       if (book.status === 1) {
         onSendMessage(
           "Answer the riddle correctly to unlock this book's secrets!"
-        );
+        )
 
         setTimeout(() => {
-          onSendMessage("");
-        }, MESSAGE_DURATION_MS);
+          onSendMessage("")
+        }, MESSAGE_DURATION_MS)
       }
 
-      const texts = ["Summon the Owl", "Send the Owl", "Dispatch the Owl"];
-      setButtonText(texts[Math.floor(Math.random() * 3)]);
+      const texts = ["Summon the Owl", "Send the Owl", "Dispatch the Owl"]
+      setButtonText(texts[Math.floor(Math.random() * 3)])
     } else {
-      setHasBeenJustUnlocked(false); // Reseteamos al cerrar o si ya estaba desbloqueado
+      setHasBeenJustUnlocked(false) // Reseteamos al cerrar o si ya estaba desbloqueado
     }
-  }, [isOpen, isUnlocked, isInCooldown, onSendMessage, book?.status]);
+  }, [isOpen, isUnlocked, isInCooldown, onSendMessage, book?.status])
 
   const restrictedContent = useMemo(() => {
     if (isInCooldown) {
@@ -221,7 +218,7 @@ export default function BookModal({
             (You can close this book while waiting)
           </p>
         </div>
-      );
+      )
     }
 
     if (isLoading) {
@@ -236,7 +233,7 @@ export default function BookModal({
             The Pensieve is searching for a question...
           </p>
         </div>
-      );
+      )
     }
 
     if (!isUnlocked && !isInCooldown) {
@@ -257,7 +254,7 @@ export default function BookModal({
             onChange={(e) => setUserAnswer(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
-                checkAnswer();
+                checkAnswer()
               }
             }}
             aria-label="Your answer"
@@ -283,10 +280,10 @@ export default function BookModal({
             {buttonText}
           </button>
         </div>
-      );
+      )
     }
 
-    return null;
+    return null
   }, [
     isInCooldown,
     remainingTime,
@@ -298,7 +295,7 @@ export default function BookModal({
     retryCount,
     checkAnswer,
     buttonText,
-  ]);
+  ])
 
   const bookContent = useMemo(
     () => [
@@ -323,22 +320,23 @@ export default function BookModal({
       },
     ],
     [book, restrictedContent, isInCooldown, isUnlocked]
-  );
+  )
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) return
 
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
-        onClose();
+        onClose()
+        setShowEffect(false)
       }
-    };
+    }
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [isOpen, onClose])
 
-  const bookSize = useMemo(() => getBookSize(), []);
+  const bookSize = useMemo(() => getBookSize(), [])
 
   return (
     <AnimatePresence mode="wait">
@@ -348,7 +346,6 @@ export default function BookModal({
             className="absolute inset-0 bg-black/50 cursor-pointer"
             onClick={onClose}
           />
-
           <motion.div
             className="relative z-10"
             style={{ perspective: "2000px" }}
@@ -389,7 +386,7 @@ export default function BookModal({
                       <h2 className="text-2xl font-serif font-bold text-emerald-900 mb-4">
                         {bookContent[0].leftPage.title}
                       </h2>
-                      <div className="text-emerald-900 font-serif flex-grow overflow-y-auto">
+                      <div className="text-gray-700 font-serif flex-grow overflow-y-auto">
                         {bookContent[0].leftPage.content}
                       </div>
                       <div className="mt-auto flex justify-between items-center pt-4 border-t border-amber-900/10">
@@ -413,14 +410,13 @@ export default function BookModal({
                       <h2 className="text-2xl font-serif font-bold text-emerald-900 mb-4">
                         {bookContent[0].rightPage.title}
                       </h2>
-                      <div className="text-emerald-900 font-serif flex-grow overflow-y-auto">
-                        {isUnlocked && unlockMessage && (
-                          <TextGenerateEffect words={unlockMessage} className="mt-4" />
-                        )}
-                        {isUnlocked && !unlockMessage && book?.description && book?.status === 1 && hasBeenJustUnlocked ? (
-                          <TextGenerateEffect words={book?.description} className="mt-4" />
-                        ) : (
-                          isUnlocked && !unlockMessage && book?.description
+                      <div className="text-gray-700 font-serif flex-grow overflow-y-auto">
+                        {isUnlocked && !showEffect && book?.description}
+                        {isUnlocked && showEffect && (
+                          <TextGenerateEffect
+                            words={book?.description}
+                            className="mt-4"
+                          />
                         )}
                         {!isUnlocked && bookContent[0].rightPage.content}
                       </div>
@@ -444,5 +440,5 @@ export default function BookModal({
         </motion.div>
       )}
     </AnimatePresence>
-  );
+  )
 }
