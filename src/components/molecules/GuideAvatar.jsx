@@ -180,7 +180,7 @@ export default function GuideAvatar({ message }) {
         {/* Message bubbles */}
         {(message || (!message && isVisible)) && (
           <div
-            className='absolute left-24 sm:left-36 top-1/2 -translate-y-1/2 rounded-lg text-white'
+            className='absolute left-24 sm:left-36 top-1/2 -translate-y-1/2 rounded-lg text-yellow-400'
             role='alert'
             aria-live='polite'
           >
