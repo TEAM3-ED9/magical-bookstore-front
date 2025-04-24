@@ -4,7 +4,7 @@ import GuideAvatar from "./components/molecules/GuideAvatar"
 
 export default function App() {
   const [loaded, setLoaded] = useState(false)
-  const [guideMessage, setGuideMessage] = useState(null) // New state
+  const [guideMessage, setGuideMessage] = useState(null)
 
   setTimeout(() => {
     setLoaded(true)
@@ -15,7 +15,7 @@ export default function App() {
       <div className="fixed inset-0 bg-[url(/background.webp)] bg-cover" />
       <div className="fixed inset-0 bg-black/10 backdrop-blur-sm" />
       {loaded && <GuideAvatar message={guideMessage} />}
-      <main className="relative min-h-screen text-white z-10 overflow-y-auto">
+      <main className="relative min-h-screen text-white z-10 overflow-y-hidden">
         <div className="max-w-7xl mx-auto p-2 md:p-4">
           <header className="p-4 sm:p-0 sm:pt-2 text-center sm:mb-4">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-HarryPotter text-title sm:text-title/80 mb-2">
