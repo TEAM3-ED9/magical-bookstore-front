@@ -71,7 +71,7 @@ export default function GuideAvatar({ message }) {
       setComment(message)
 
       // Hide dynamic message after 3 seconds
-      const timer = setTimeout(() => setIsVisible(false), 3000)
+      const timer = setTimeout(() => setIsVisible(false), 5000)
       return () => clearTimeout(timer)
     }
 
