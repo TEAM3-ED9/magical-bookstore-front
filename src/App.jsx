@@ -18,7 +18,7 @@ export default function App() {
 
   /**
    * State variable to hold the message to be displayed by the guide avatar.
-   * @type {ReturnType<typeof useState<string | null>}
+   * @type {ReturnType<typeof useState<string | null>>}
    */
   const [guideMessage, setGuideMessage] = useState(null)
 
