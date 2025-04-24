@@ -16,7 +16,7 @@ export default function RequestLoader() {
       <div className="relative">
         <img
           src="/loading.webp"
-          alt="Imágen de una varita lanzando un hechizo"
+          alt="Image of a wand casting an spell"
           className="size-120 object-contain rounded-lg shadow-xl animate-pulse duration-900 delay-900 ease-in-out"
         />
         <div className="absolute inset-0 flex items-center justify-center">
