@@ -25,13 +25,17 @@ export default function BookSearch({ onSearch, onFilter, filter, search }) {
               name="selector"
               className="w-32 py-2.5 rounded-xl px-5 bg-white/10 focus:bg-white/30 outline-0 border-none delay-75 transition-all duration-300 placeholder:text-white/50 hover:bg-white/30"
               onChange={(e) => {
-                const value = e.target.value
-                onFilter(value)
+                const value = e.target.value;
+                onFilter(value);
               }}
               value={filter}
             >
-              <option value="title">Title</option>
-              <option value="author">Author</option>
+              <option className="bg-shelf" value="title">
+                Title
+              </option>
+              <option className="bg-shelf" value="author">
+                Author
+              </option>
             </select>
             <input
               type="text"
@@ -39,8 +43,8 @@ export default function BookSearch({ onSearch, onFilter, filter, search }) {
               placeholder="Search by title or author..."
               value={search ?? ""}
               onChange={(e) => {
-                const value = e.target.value
-                onSearch(value)
+                const value = e.target.value;
+                onSearch(value);
               }}
             />
             <button
@@ -53,5 +57,5 @@ export default function BookSearch({ onSearch, onFilter, filter, search }) {
         )}
       </div>
     </div>
-  )
+  );
 }
