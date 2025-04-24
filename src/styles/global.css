@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -26,16 +26,16 @@ body {
 
   .book-popup {
     /* box-shadow: 0 10px 25px var(--color-dark); */
-
   }
 
   .book-spine {
-
     /* box-shadow: 2px 4px 10px var(--book-shadow); */
     display: flex;
     width: 120px;
     color: #f0e7d5;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
     cursor: pointer;
   }
 
