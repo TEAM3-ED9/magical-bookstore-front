@@ -1,4 +1,5 @@
 @import "tailwindcss";
+
 @font-face {
   font-family: 'HarryPotter';
   src: url('/fonts/harrypotter.ttf') format('truetype');
@@ -14,16 +15,63 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+
   .writing-vertical-lr {
     writing-mode: vertical-lr;
     text-orientation: mixed;
   }
+
   .book-popup {
-    box-shadow: 0 10px 25px var(--color-dark);
+    /* box-shadow: 0 10px 25px var(--color-dark); */
+
   }
+
   .book-spine {
-    inset: 0 0 0 1px rgba(255, 255, 255, 0.05), inset 4px,
-      0 0 0 var(--color-accent) 99 2px 2px 4px rgb(0, 0, 0, 0.5);
+
+
+    /* box-shadow: 2px 4px 10px var(--book-shadow); */
+    display: flex;
+    width: 120px;
+    color: #f0e7d5;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+  }
+
+  .book-spine:hover {
+    transform: scale(1.05) rotateZ(-1deg);
+    transition: transform 0.2s ease-in-out;
+    box-shadow:
+      0 0 10px rgba(255, 255, 255, 0.3),
+      0 0 20px rgba(255, 255, 255, 0.2),
+      0 0 30px rgba(255, 255, 255, 0.3);
+    z-index: 11;
+  }
+
+  .book-spine::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 8px;
+    height: 100%;
+    background: var(--book-spine);
+    border-right: 2px solid #00000044;
+  }
+
+  .book-color-gryffindor {
+    background-color: #ae0001;
+  }
+
+  .book-color-slytherin {
+    background-color: #2a623d;
+  }
+
+  .book-color-Ravenclaw {
+    background-color: #222f5b;
+  }
+
+  .book-color-hufflepuff {
+    background-color: #b3863b;
   }
 }
 
