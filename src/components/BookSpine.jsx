@@ -69,15 +69,12 @@ export default function BookSpine({ book, onClick }) {
 
         <div className="writing-vertical-lr text-[10px] text-white/50 opacity-80 mt-auto ml-auto"></div>
 
-        <p className="flex-wrap text-xs">{book.title}</p>
+        <p className="absolute bottom-5 flex-wrap text-xs">{book.title}</p>
         <div
           className="absolute top-1 left-1/2 -translate-x-1/2 size-4 rounded-full opacity-70"
           style={{ backgroundColor: book.accent }}
         />
       </div>
-
-      <div className="absolute top-[10%] inset-x-0 h-px bg-black/20" />
-      <div className="absolute bottom-[10%] inset-x-0 h-px bg-black/20" />
 
       <div className="absolute bottom-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
     </div>

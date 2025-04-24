@@ -137,7 +137,7 @@ export default function BookShelf({ onSendMessage }) {
                 <div className="absolute -top-4 -right-7 bottom-0 w-12 bg-amber-800 rounded-r-md"></div>
 
                 {/* Books */}
-                <div className="relative p-4 rounded-b-md shadow-lg bg-gray-900">
+                <div className="relative p-4 rounded-b-md shadow-lg bg-neutral-900">
                   <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-3">
                     {shelf.map((book) => (
                       <BookSpine
