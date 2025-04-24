@@ -1,3 +1,6 @@
+import { useMemo } from "react"
+import { useBookUnlock } from "../contexts/BookUnlock"
+
 const hogwartsHouses = {
   Gryffindor: {
     url: "../../src/assets/logos/Gryffindor.webp",
@@ -15,27 +18,36 @@ const hogwartsHouses = {
     url: "../../src/assets/logos/Hufflepuff.webp",
     ColorClass: "book-color-hufflepuff", // amarillo dorado
   },
-};
+}
 
 function extendBookWithHouseData(book, houses) {
-  const houseData = houses[book.category_name] || {};
+  const houseData = houses[book.category_name] || {}
   return {
     ...book,
     ...houseData,
-  };
+  }
 }
 
 export default function BookSpine({ book, onClick }) {
-  const extendBook = extendBookWithHouseData(book, hogwartsHouses);
+  const { booksUnlocked } = useBookUnlock()
+  const isUnlocked = useMemo(
+    () => booksUnlocked.some((unlockedBook) => unlockedBook.bookId === book.id),
+    [booksUnlocked, book.id]
+  )
+  const extendBook = extendBookWithHouseData(book, hogwartsHouses)
+  const spineStyle = useMemo(() => {
+    return {
+      backgroundColor: `color-mix(in srgb, var(--color-book) ${
+        isUnlocked ? "85%" : "5%"
+      }, black ${isUnlocked ? "5%" : "55%"})`,
+      filter: isUnlocked ? "brightness(1)" : "brightness(0.5)",
+    }
+  }, [isUnlocked])
+
   return (
     <div
       className="h-[280px] w-full rounded-sm cursor-pointer duration-300 relative overflow-hidden book-spine"
-      style={{
-        backgroundColor: `color-mix(in srgb, var(--color-book) ${
-          book.status === 0 ? "85%" : "5%"
-        }, black 55%)`,
-        filter: book.status === 0 ? "brightness(1)" : "brightness(0.5)",
-      }}
+      style={spineStyle}
       onClick={() => onClick(book.id)}
     >
       <div className="absolute inset-0 bg-[url('/placeholder.svg')] opacity-20 mix-blend-overlay" />
@@ -46,27 +58,25 @@ export default function BookSpine({ book, onClick }) {
       <div
         className={`h-full w-full flex flex-col items-center justify-between p-2 text-center relative ${extendBook.ColorClass}`}
       >
-        <p className="flex-wrap p-1">{`${
-          extendBook.status === 0 ? "🔓" : "🔒"
-        }`}</p>
+        <p className="flex-wrap p-1">{isUnlocked ? "🔓" : "🔒"}</p>
         <div className=" text-center font-serif text-white/90 text-sm md:text-base font-medium tracking-wide absolute inset-0 flex items-center justify-center px-2 max-h-55 m-auto [text-shadow:1px_1px_2px_rgba(0,0,0,0.5)]">
-          {/* <p className="flex-wrap">{book.title}</p> */}
-          <img src={extendBook.url} alt={extendBook.title} className="w-15" />
+          <img
+            src={extendBook.url}
+            alt={extendBook.title}
+            className="w-15"
+          />
         </div>
 
         <div className="writing-vertical-lr text-[10px] text-white/50 opacity-80 mt-auto ml-auto"></div>
 
-        <p className="flex-wrap text-xs">{book.title}</p>
+        <p className="absolute bottom-5 flex-wrap text-xs">{book.title}</p>
         <div
           className="absolute top-1 left-1/2 -translate-x-1/2 size-4 rounded-full opacity-70"
           style={{ backgroundColor: book.accent }}
         />
       </div>
 
-      <div className="absolute top-[10%] inset-x-0 h-px bg-black/20" />
-      <div className="absolute bottom-[10%] inset-x-0 h-px bg-black/20" />
-
       <div className="absolute bottom-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
     </div>
-  );
+  )
 }

@@ -6,7 +6,9 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import useSWR from "swr";
 import { useBookUnlock } from "../contexts/BookUnlock";
 import { formatTime } from "../lib/utils";
-import { CardContainer } from "@/components/ui/3d-card"; // Importa el componente 3DCard
+import { CardContainer } from "@/components/ui/3d-card";
+import { MESSAGE_DURATION_MS } from "../lib/constants"
+
 
 export default function BookModal({
   isOpen,
@@ -15,38 +17,38 @@ export default function BookModal({
   onSendMessage,
   book,
 }) {
-  const [remainingTime, setRemainingTime] = useState("");
-  const [questionData, setQuestionData] = useState(null);
-  const [userAnswer, setUserAnswer] = useState("");
-  const [answerIncorrect, setAnswerIncorrect] = useState(false);
-  const [buttonText, setButtonText] = useState("Summon the Owl");
+  const [remainingTime, setRemainingTime] = useState("")
+  const [questionData, setQuestionData] = useState(null)
+  const [userAnswer, setUserAnswer] = useState("")
+  const [answerIncorrect, setAnswerIncorrect] = useState(false)
+  const [buttonText, setButtonText] = useState("Summon the Owl")
   const {
     booksUnlocked,
     retryCounts,
     cooldownEndTimes,
     unlockBook,
     incrementRetryCount,
-  } = useBookUnlock();
+  } = useBookUnlock()
 
   const isUnlocked = useMemo(
     () => booksUnlocked.some((b) => b.bookId === book?.id),
     [booksUnlocked, book?.id]
-  );
+  )
 
   const retryCount = useMemo(
     () => retryCounts[book?.id] || 0,
     [retryCounts, book?.id]
-  );
+  )
 
   const cooldownEndTime = useMemo(
     () => cooldownEndTimes[book?.id] || null,
     [cooldownEndTimes, book?.id]
-  );
+  )
 
   const isInCooldown = useMemo(
     () => retryCount >= 3 && cooldownEndTime && cooldownEndTime > Date.now(),
     [retryCount, cooldownEndTime]
-  );
+  )
 
   const questionQuery = useMemo(
     () =>
@@ -54,7 +56,7 @@ export default function BookModal({
         ? API_ENDPOINTS.GET_QUESTION + book.id
         : null,
     [book, isUnlocked, isInCooldown]
-  );
+  )
 
   const {
     data: fetchedQuestionData,
@@ -64,60 +66,60 @@ export default function BookModal({
     ...SWR_OPTIONS,
     revalidateOnFocus: false,
     onSuccess: (data) => {
-      setQuestionData(data);
-      setUserAnswer("");
-      setAnswerIncorrect(false);
+      setQuestionData(data)
+      setUserAnswer("")
+      setAnswerIncorrect(false)
     },
     onError: () => {
       if (questionQuery) {
-        setQuestionData({ question: "Failed to load question.", answer: "" });
+        setQuestionData({ question: "Failed to load question.", answer: "" })
       } else {
-        setQuestionData(null);
+        setQuestionData(null)
       }
     },
-  });
+  })
 
   useEffect(() => {
-    let timerInterval = null;
+    let timerInterval = null
 
     if (isInCooldown && cooldownEndTime) {
       const updateTimer = () => {
-        const now = Date.now();
-        const msLeft = cooldownEndTime - now;
+        const now = Date.now()
+        const msLeft = cooldownEndTime - now
 
         if (msLeft <= 0) {
-          setRemainingTime("00:00");
-          clearInterval(timerInterval);
+          setRemainingTime("00:00")
+          clearInterval(timerInterval)
         } else {
-          setRemainingTime(formatTime(msLeft));
+          setRemainingTime(formatTime(msLeft))
         }
-      };
+      }
 
-      updateTimer();
-      timerInterval = setInterval(updateTimer, 1000);
+      updateTimer()
+      timerInterval = setInterval(updateTimer, 1000)
     } else {
-      setRemainingTime("");
+      setRemainingTime("")
     }
 
     return () => {
       if (timerInterval) {
-        clearInterval(timerInterval);
+        clearInterval(timerInterval)
       }
-    };
-  }, [isInCooldown, cooldownEndTime, book?.id]);
+    }
+  }, [isInCooldown, cooldownEndTime, book?.id])
 
   const { trigger } = useCustomMutation(API_ENDPOINTS.VALIDATE_QUESTION, {
     fetcher,
     method: "POST",
-  });
+  })
 
   const checkAnswer = useCallback(async () => {
-    const answer = userAnswer.trim();
+    const answer = userAnswer.trim()
     if (!answer || !questionData?.id || !book?.id || isUnlocked || isInCooldown)
-      return;
+      return
 
     const normalizedUserAnswer =
-      answer.charAt(0).toUpperCase() + answer.slice(1);
+      answer.charAt(0).toUpperCase() + answer.slice(1)
 
     try {
       const data = await trigger({
@@ -126,37 +128,37 @@ export default function BookModal({
           book_id: book.id,
           answer: normalizedUserAnswer,
         }),
-      });
+      })
 
       if (data?.message?.includes("Book unlocked successfully")) {
-        unlockBook(book.id);
+        unlockBook(book.id)
         onSendMessage(
           "Well done! The book is unlocked. But remember, leaving the library will reset all books"
-        );
+        )
       }
     } catch (error) {
-      console.error("Error validating answer:", error);
+      console.error("Error validating answer:", error)
 
-      const currentRetryCount = retryCounts[book.id] || 0;
-      incrementRetryCount(book.id);
-      setAnswerIncorrect(true);
+      const currentRetryCount = retryCounts[book.id] || 0
+      incrementRetryCount(book.id)
+      setAnswerIncorrect(true)
 
       if (currentRetryCount + 1 === 1) {
-        onSendMessage("Be careful! That's your first wrong answer.");
+        onSendMessage("Be careful! That's your first wrong answer.")
         setTimeout(() => {
-          onSendMessage("");
-        }, 3000);
+          onSendMessage("")
+        }, MESSAGE_DURATION_MS)
       } else if (currentRetryCount + 1 === 2) {
-        onSendMessage("Careful now—only one more try before this book locks!");
+        onSendMessage("Careful now—only one more try before this book locks!")
         setTimeout(() => {
-          onSendMessage("");
-        }, 3000);
+          onSendMessage("")
+        }, MESSAGE_DURATION_MS)
       }
 
       if (currentRetryCount + 1 >= 3) {
-        onSendMessage("We must clear all this messy library...");
-        onMaxFailedAttempts();
-        onClose();
+        onSendMessage("We must clear all this messy library...")
+        onMaxFailedAttempts()
+        onClose()
       }
     }
   }, [
@@ -170,24 +172,24 @@ export default function BookModal({
     onMaxFailedAttempts,
     isUnlocked,
     isInCooldown,
-  ]);
+  ])
 
   useEffect(() => {
     if (isOpen && !isUnlocked && !isInCooldown) {
       if (book.status === 1) {
         onSendMessage(
           "Answer the riddle correctly to unlock this book's secrets!"
-        );
+        )
 
         setTimeout(() => {
-          onSendMessage("");
-        }, 3000);
+          onSendMessage("")
+        }, MESSAGE_DURATION_MS)
       }
 
-      const texts = ["Summon the Owl", "Send the Owl", "Dispatch the Owl"];
-      setButtonText(texts[Math.floor(Math.random() * 3)]);
+      const texts = ["Summon the Owl", "Send the Owl", "Dispatch the Owl"]
+      setButtonText(texts[Math.floor(Math.random() * 3)])
     }
-  }, [isOpen, isUnlocked, isInCooldown, onSendMessage]);
+  }, [isOpen, isUnlocked, isInCooldown, onSendMessage])
 
   const restrictedContent = useMemo(() => {
     if (isInCooldown) {
@@ -209,7 +211,7 @@ export default function BookModal({
             (You can close this book while waiting)
           </p>
         </div>
-      );
+      )
     }
 
     if (isLoading) {
@@ -224,7 +226,7 @@ export default function BookModal({
             The Pensieve is searching for a question...
           </p>
         </div>
-      );
+      )
     }
 
     if (!isUnlocked) {
@@ -245,13 +247,16 @@ export default function BookModal({
             onChange={(e) => setUserAnswer(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
-                checkAnswer();
+                checkAnswer()
               }
             }}
             aria-label="Your answer"
           />
           {answerIncorrect && (
-            <p className="text-red-600 text-sm -mt-3" role="alert">
+            <p
+              className="text-red-600 text-sm -mt-3"
+              role="alert"
+            >
               {retryCount === 1
                 ? "Your first attempt was incorrect. Try again!"
                 : retryCount === 2
@@ -268,12 +273,12 @@ export default function BookModal({
             {buttonText}
           </button>
         </div>
-      );
+      )
     }
 
     return (
       <p className="text-emerald-900 font-serif">{book?.description ?? ""}</p>
-    );
+    )
   }, [
     isInCooldown,
     remainingTime,
@@ -286,7 +291,7 @@ export default function BookModal({
     checkAnswer,
     book?.description,
     buttonText,
-  ]);
+  ])
 
   const bookContent = useMemo(
     () => [
@@ -311,22 +316,22 @@ export default function BookModal({
       },
     ],
     [book, restrictedContent, isInCooldown, isUnlocked]
-  );
+  )
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) return
 
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
-        onClose();
+        onClose()
       }
-    };
+    }
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [isOpen, onClose])
 
-  const bookSize = useMemo(() => getBookSize(), []);
+  const bookSize = useMemo(() => getBookSize(), [])
 
   return (
     <AnimatePresence mode="wait">
@@ -424,5 +429,5 @@ export default function BookModal({
         </motion.div>
       )}
     </AnimatePresence>
-  );
+  )
 }
