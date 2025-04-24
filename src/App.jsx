@@ -1,6 +1,8 @@
-import Bookshelf from '@/components/BookShelf'
-import { useEffect, useState } from 'react'
-import GuideAvatar from './components/molecules/GuideAvatar'
+
+import Bookshelf from "@/components/BookShelf"
+import { useState } from "react"
+import GuideAvatar from "./components/molecules/GuideAvatar"
+import { SparklesCore } from "./components/ui/sparkles"
 
 /**
  * The main application component.
@@ -36,9 +38,20 @@ export default function App() {
   }, [])
 
   return (
-    <div className='relative'>
-      <div className='fixed inset-0 bg-[url(/background.webp)] bg-cover' />
-      <div className='fixed inset-0 bg-black/10 backdrop-blur-sm' />
+    <div className="relative">
+      <div className="fixed inset-0 bg-[url(/background.webp)] bg-cover" />
+      <div className="fixed inset-0 bg-black/10 backdrop-blur-sm" />
+      <div className="fixed inset-0 z-10">
+        <SparklesCore
+          id="tsparticlesfullpage"
+          background="transparent"
+          minSize={0.6}
+          maxSize={2}
+          particleDensity={20}
+          className="w-full h-full"
+          particleColor="#FFFFFF"
+        />
+      </div>
       {loaded && <GuideAvatar message={guideMessage} />}
       <main className='relative min-h-screen text-white z-10 overflow-y-hidden'>
         <div className='max-w-7xl mx-auto p-2 md:p-4'>
