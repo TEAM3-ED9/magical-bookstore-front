@@ -6,7 +6,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import useSWR from "swr";
 import { useBookUnlock } from "../contexts/BookUnlock";
 import { formatTime } from "../lib/utils";
-import { CardContainer } from "@/components/ui/3d-card"; // Importa el componente 3DCard
+import { CardContainer } from "@/components/ui/3d-card";
+import { TextGenerateEffect } from "@/components/ui/text-generate-effect"; 
 
 export default function BookModal({
   isOpen,
@@ -20,6 +21,7 @@ export default function BookModal({
   const [userAnswer, setUserAnswer] = useState("");
   const [answerIncorrect, setAnswerIncorrect] = useState(false);
   const [buttonText, setButtonText] = useState("Summon the Owl");
+  const [unlockMessage, setUnlockMessage] = useState(""); 
   const {
     booksUnlocked,
     retryCounts,
@@ -130,9 +132,11 @@ export default function BookModal({
 
       if (data?.message?.includes("Book unlocked successfully")) {
         unlockBook(book.id);
-        onSendMessage(
-          "Well done! The book is unlocked. But remember, leaving the library will reset all books"
-        );
+        setUnlockMessage("Well done! The book is unlocked. But remember, leaving the library will reset all books");
+        setTimeout(() => {
+          setUnlockMessage("");
+        }, 5000);
+        onSendMessage(""); 
       }
     } catch (error) {
       console.error("Error validating answer:", error);
@@ -170,6 +174,7 @@ export default function BookModal({
     onMaxFailedAttempts,
     isUnlocked,
     isInCooldown,
+    onSendMessage,
   ]);
 
   useEffect(() => {
@@ -271,9 +276,13 @@ export default function BookModal({
       );
     }
 
-    return (
-      <p className="text-emerald-900 font-serif">{book?.description ?? ""}</p>
-    );
+    <div className="text-emerald-900 font-serif">
+  {isUnlocked && unlockMessage && (
+    <TextGenerateEffect words={unlockMessage} className="mt-4" />
+  )}
+  {isUnlocked && !unlockMessage && book?.description}
+  {!isUnlocked && bookContent[0].rightPage.content}
+</div>
   }, [
     isInCooldown,
     remainingTime,
@@ -286,6 +295,7 @@ export default function BookModal({
     checkAnswer,
     book?.description,
     buttonText,
+    unlockMessage, 
   ]);
 
   const bookContent = useMemo(
@@ -310,7 +320,7 @@ export default function BookModal({
         },
       },
     ],
-    [book, restrictedContent, isInCooldown, isUnlocked]
+    [book, restrictedContent, isInCooldown, isUnlocked, unlockMessage]
   );
 
   useEffect(() => {
@@ -341,7 +351,7 @@ export default function BookModal({
             className="relative z-10"
             style={{ perspective: "2000px" }}
           >
-            <CardContainer> {/* Envolvemos el libro con CardContainer */}
+            <CardContainer>
               <motion.div
                 className="relative flex px-4 py-2 bg-[url(/book.webp)] bg-no-repeat bg-cover rounded-2xl"
                 style={{
@@ -403,6 +413,11 @@ export default function BookModal({
                       </h2>
                       <div className="text-emerald-900 font-serif flex-grow overflow-y-auto">
                         {bookContent[0].rightPage.content}
+                        {isUnlocked && unlockMessage && (
+                          <TextGenerateEffect words={unlockMessage} className="mt-4" />
+                        )}
+                        {isUnlocked && !unlockMessage && book?.description}
+                        {!isUnlocked && bookContent[0].rightPage.content}
                       </div>
                       <div className="mt-auto flex justify-between items-center pt-4 border-t border-amber-900/10">
                         <span className="text-sm text-emerald-800 font-serif">
