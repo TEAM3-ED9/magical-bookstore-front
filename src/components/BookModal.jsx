@@ -8,94 +8,156 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import useSWR from 'swr'
+import { TextGenerateEffectOriginal } from './ui/text-original'
 
 /**
- * A modal component that displays a book with interactive content, including riddles to unlock restricted content.
- * @module BookModal
+ * BookModal component displays a modal with a book's details and interactive features.
+ * It allows users to unlock books by answering riddles, view secret content, and handle cooldowns.
+ *
  * @param {Object} props - The component props.
- * @param {boolean} props.isOpen - Controls whether the modal is visible.
+ * @param {boolean} props.isOpen - Indicates whether the modal is open.
  * @param {function(React.MouseEvent<HTMLDivElement> | void): void} props.onClose - Callback function to close the modal.
- * @param {Function} props.onMaxFailedAttempts - Callback function triggered when max failed attempts reached.
- * @param {Function} props.onSendMessage - Callback function to send messages to the parent component.
- * @param {Object} props.book - The book data to display in the modal.
- * @param {number} props.book.id - The unique identifier for the book.
+ * @param {Function} props.onMaxFailedAttempts - Callback function triggered after maximum failed attempts.
+ * @param {Function} props.onSendMessage - Callback function to send messages to the user.
+ * @param {Object} props.book - The book object containing its details.
+ * @param {string} props.book.id - The unique identifier of the book.
  * @param {string} props.book.title - The title of the book.
  * @param {string} props.book.author - The author of the book.
- * @param {string} props.book.description - The description/content of the book.
- * @param {number} props.book.status - The status of the book (1 for restricted).
- * @returns {React.ReactElement} The BookModal component.
+ * @param {string} props.book.description - The description of the book, which may contain secrets.
+ * @param {number} props.book.status - The status of the book (e.g., locked or unlocked).
+ *
+ /**
+ * @component BookModal
+ * @description A modal component that displays a book with animated page transitions.
+ * It handles different states such as locked, unlocked, and cooldown periods,
+ * displaying appropriate content and interactions for each state.
+ *
+ * @param {object} props - The component's props.
+ * @param {boolean} props.isOpen - Controls the visibility of the modal.
+ * @param {function} props.onClose - Function to call when the modal should be closed.
+ * @param {object} props.book - The data object containing information about the book.
+ * @param {boolean} props.isUnlocked - Indicates if the current book is unlocked.
+ * @param {boolean} props.isInCooldown - Indicates if the user is in a cooldown period.
+ * @param {string} props.remainingTime - The remaining time in the cooldown period.
+ * @param {boolean} props.isLoading - Indicates if data is currently being loaded.
+ * @param {object} props.questionData - The data for the current riddle question.
+ * @param {string} props.userAnswer - The user's current answer to the riddle.
+ * @param {function} props.setUserAnswer - Function to update the user's answer.
+ * @param {boolean} props.answerIncorrect - Indicates if the user's last answer was incorrect.
+ * @param {number} props.retryCount - The number of incorrect attempts made.
+ * @param {function} props.checkAnswer - Function to validate the user's answer.
+ * @param {string} props.buttonText - The text displayed on the submit button.
+ * @param {string} props.unlockedDescription - The description to display when the book is unlocked.
+ * @param {number} props.animationPhase - The current phase of the unlock animation.
+ * @param {string} props.bookDescription - The currently displayed description of the book.
+ * @param {Array<object>} props.replacedWords - Information about words replaced during secret reveal.
+ * @param {boolean} props.animationComplete - Indicates if the secret reveal animation is complete.
+ * @param {function} props.handleSecretClick - Function to handle the click on the secret reveal trigger.
+ * @param {object} props.secretsData - Data containing secret words to reveal.
+ * @param {function} props.setReplacedWords - Function to set the replaced words state.
+ * @param {function} props.setBookDescription - Function to set the book description state.
+ * @param {function} props.storeBookDescription - Function to store the updated book description.
+ *
+ * @returns {React.ReactElement} The rendered BookModal component.
  */
 export default function BookModal({ isOpen, onClose, onMaxFailedAttempts, onSendMessage, book }) {
   /**
-   * @typedef {Object} QuestionData
-   * @property {string} question - The question/riddle to display.
-   * @property {string} answer - The correct answer to the question.
-   * @property {number} id - The unique identifier for the question.
-   */
+   * */
 
-  /**
-   * @typedef {Object} BookPage
-   * @property {string} title - The title of the page.
-   * @property {string|React.ReactElement} content - The content of the page.
-   * @property {number} index - The page number/index.
-   */
+  /** @type {[boolean, function]} */
+  const [animationComplete, setAnimationComplete] = useState(false)
 
-  /**
-   * @typedef {Object} BookContent
-   * @property {BookPage} leftPage - The left page content.
-   * @property {BookPage} rightPage - The right page content.
-   */
+  /** @type {[Array<string>, function]} */
+  const [replacedWords, setReplacedWords] = useState([])
 
-  /**
-   * State for remaining cooldown time.
-   * @type {[string, Function]}
-   */
+  /** @type {[boolean, function]} */
+  const [showSecret, setShowSecret] = useState(false)
+
+  /** @type {[string, function]} */
   const [remainingTime, setRemainingTime] = useState('')
 
-  /**
-   * State for the current question data.
-   * @type {[QuestionData|null, Function]}
-   */
+  /** @type {[Object|null, function]} */
   const [questionData, setQuestionData] = useState(null)
 
-  /**
-   * State for the user's answer input.
-   * @type {[string, Function]}
-   */
+  /** @type {[string, function]} */
   const [userAnswer, setUserAnswer] = useState('')
 
-  /**
-   * State tracking if the answer was incorrect.
-   * @type {[boolean, Function]}
-   */
+  /** @type {[boolean, function]} */
   const [answerIncorrect, setAnswerIncorrect] = useState(false)
 
-  /**
-   * State for the submit button text.
-   * @type {[string, Function]}
-   */
+  /** @type {[string, function]} */
   const [buttonText, setButtonText] = useState('Summon the Owl')
 
-  /**
-   * State for controlling text generation effect visibility.
-   * @type {[boolean, Function]}
-   */
-  const [showEffect, setShowEffect] = useState(false)
+  /** @type {[string, function]} */
+  const [bookDescription, setBookDescription] = useState('')
+
+  /** @type {[number, function]} */
+  const [animationPhase, setAnimationPhase] = useState(0)
+
+  /** @type {[boolean, function]} */
+  const [hasUnlockedSecrets, setHasUnlockedSecrets] = useState(false)
 
   /**
-   * Context hook for book unlocking functionality.
-   * @type {Object}
-   * @property {Array} booksUnlocked - List of unlocked book IDs.
-   * @property {Object} retryCounts - Mapping of book IDs to retry counts.
-   * @property {Object} cooldownEndTimes - Mapping of book IDs to cooldown end times.
-   * @property {Function} unlockBook - Function to unlock a book.
-   * @property {Function} incrementRetryCount - Function to increment retry count for a book.
+   * Regular expression to match secret patterns in book descriptions (one or more '#' characters).
+   * Used to identify hidden content markers in text.
+   * @type {RegExp}
    */
-  const { booksUnlocked, retryCounts, cooldownEndTimes, unlockBook, incrementRetryCount } =
-    useBookUnlock()
+  const secretPatternRegex = /#+/g
 
   /**
-   * Memoized value checking if current book is unlocked.
+   * The result of matching the secret pattern against the current book's description.
+   * Contains an array of matches if found, or null if no matches exist.
+   * @type {Array<string>|null}
+   */
+  const secretMatches = book.description.match(secretPatternRegex)
+
+  /**
+   * Flag indicating whether the current book contains any secret patterns.
+   * True when secretMatches is not null and contains at least one match.
+   * @type {boolean}
+   */
+  const hasSecrets = secretMatches !== null && secretMatches.length > 0
+
+  /**
+   * Destructured values from the useBookUnlock hook for managing book unlocking state.
+   * @type {{
+   *   booksUnlocked: Array<{
+   *     bookId: string,
+   *     unlockTime: number,
+   *     timerId: number|null,
+   *     description?: string
+   *   }>,
+   *   retryCounts: Record<string, number>,
+   *   cooldownEndTimes: Record<string, number>,
+   *   unlockBook: (bookId: string, description?: string) => void,
+   *   incrementRetryCount: (bookId: string) => void,
+   *   storeBookDescription: (bookId: string, description: string) => void
+   * }}
+   */
+  const {
+    booksUnlocked,
+    retryCounts,
+    cooldownEndTimes,
+    unlockBook,
+    incrementRetryCount,
+    storeBookDescription
+  } = useBookUnlock()
+
+  /**
+   * Memoized function that returns the appropriate book description based on unlock status.
+   * Returns the full description if book is public (status 0), otherwise checks unlocked books.
+   * @type {string|undefined}
+   */
+  const unlockedDescription = useMemo(() => {
+    if (book.status === 0) {
+      return book.description
+    } else {
+      return booksUnlocked?.find((b) => b.bookId === book?.id)?.description
+    }
+  }, [booksUnlocked, book?.id, book.status, book.description])
+
+  /**
+   * Memoized boolean indicating whether the current book is unlocked.
    * @type {boolean}
    */
   const isUnlocked = useMemo(
@@ -104,13 +166,15 @@ export default function BookModal({ isOpen, onClose, onMaxFailedAttempts, onSend
   )
 
   /**
-   * Memoized retry count for current book.
+   * Memoized count of retry attempts for the current book.
+   * Returns 0 if no retries recorded.
    * @type {number}
    */
   const retryCount = useMemo(() => retryCounts[book?.id] || 0, [retryCounts, book?.id])
 
   /**
-   * Memoized cooldown end time for current book.
+   * Memoized cooldown end timestamp for the current book.
+   * Returns null if no cooldown active.
    * @type {number|null}
    */
   const cooldownEndTime = useMemo(
@@ -119,7 +183,8 @@ export default function BookModal({ isOpen, onClose, onMaxFailedAttempts, onSend
   )
 
   /**
-   * Memoized value checking if book is in cooldown period.
+   * Memoized boolean indicating if book is in cooldown period.
+   * True when retry count >= 3 and cooldown hasn't expired.
    * @type {boolean}
    */
   const isInCooldown = useMemo(
@@ -128,7 +193,8 @@ export default function BookModal({ isOpen, onClose, onMaxFailedAttempts, onSend
   )
 
   /**
-   * Memoized question API endpoint URL.
+   * Memoized API endpoint for fetching book question.
+   * Returns null if book is unlocked, in cooldown, or not question-protected.
    * @type {string|null}
    */
   const questionQuery = useMemo(
@@ -140,9 +206,83 @@ export default function BookModal({ isOpen, onClose, onMaxFailedAttempts, onSend
   )
 
   /**
-   * SWR hook for fetching question data.
+   * Handler function for revealing secret content.
+   * Sets the showSecret state to true when called.
+   * @type {function(): void}
+   */
+  const handleSecretClick = () => {
+    setShowSecret(true)
+  }
+
+  /**
+   * URL for fetching secret words, constructed when both:
+   * 1. Book has secrets (hasSecrets is true)
+   * 2. User has clicked to reveal them (showSecret is true)
+   * @type {string|null}
+   */
+  const secretsUrl =
+    hasSecrets && showSecret ? `${API_ENDPOINTS.SECRET_WORDS}/book_id?book_id=${book.id}` : null
+
+  /**
+   * SWR hook for fetching secret words data from the API.
    * @type {Object}
-   * @property {boolean} isLoading - Loading state of the request.
+   * @property {Array<{original: string, replacement: string}>|undefined} data - The fetched secrets data containing original and replacement words
+   */
+  const { data: secretsData } = useSWR(secretsUrl, fetcher, { ...SWR_OPTIONS })
+
+  /**
+   * Animates the replacement of secret words in the book description.
+   * Handles the sequential animation of words being replaced.
+   *
+   * @type {function(Array<string>): void}
+   * @param {Array<string>} replacedWords - Array of replacement words
+   * @returns {void}
+   */
+  const animateSecretWords = useCallback((replacedWords) => {
+    if (!replacedWords?.length) return
+
+    setAnimationComplete(false)
+
+    let currentIndex = 0
+    const totalWords = replacedWords.length
+
+    const animateNextWord = () => {
+      if (currentIndex >= totalWords) {
+        setAnimationComplete(true)
+        return
+      }
+
+      currentIndex++
+      setTimeout(animateNextWord, 300)
+    }
+
+    animateNextWord()
+  }, [])
+
+  /**
+   * Effect hook that triggers the secret words animation when replacedWords changes.
+   * Only runs when there are words to replace.
+   */
+  useEffect(() => {
+    if (replacedWords.length > 0) {
+      animateSecretWords(replacedWords)
+    }
+  }, [replacedWords, animateSecretWords])
+
+  /**
+   * Effect hook that triggers secret words animation when secrets data is loaded.
+   * Only runs when secretsData contains valid words array.
+   */
+  useEffect(() => {
+    if (secretsData && secretsData?.words) {
+      animateSecretWords(secretsData?.words)
+    }
+  }, [secretsData, animateSecretWords])
+
+  /**
+   * SWR hook for fetching book question data with custom options.
+   * @type {Object}
+   * @property {boolean} isLoading - Loading state of the question request
    */
   const { isLoading } = useSWR(questionQuery, fetcher, {
     ...SWR_OPTIONS,
@@ -162,9 +302,12 @@ export default function BookModal({ isOpen, onClose, onMaxFailedAttempts, onSend
   })
 
   /**
-   * Effect hook for managing cooldown timer.
+   * Effect hook that manages the cooldown timer display.
+   * Updates remaining time every second when in cooldown.
+   * Cleans up interval on unmount or when cooldown ends.
    */
   useEffect(() => {
+    /** @type {NodeJS.Timeout|null} */
     let timerInterval = null
 
     if (isInCooldown && cooldownEndTime) {
@@ -194,9 +337,9 @@ export default function BookModal({ isOpen, onClose, onMaxFailedAttempts, onSend
   }, [isInCooldown, cooldownEndTime, book?.id])
 
   /**
-   * Custom mutation hook for validating answers.
+   * Custom mutation hook for validating question answers.
    * @type {Object}
-   * @property {Function} trigger - Function to trigger the mutation.
+   * @property {function} trigger - Function to execute the mutation
    */
   const { trigger } = useCustomMutation(API_ENDPOINTS.VALIDATE_QUESTION, {
     fetcher,
@@ -204,10 +347,13 @@ export default function BookModal({ isOpen, onClose, onMaxFailedAttempts, onSend
   })
 
   /**
-   * Validates the user's answer against the question.
    * @async
    * @function checkAnswer
-   * @returns {Promise<void>}
+   * @description Checks the user's answer against the expected answer for the current question.
+   * If the answer is correct, it unlocks the book, triggers an animation, and potentially reveals secrets.
+   * If the answer is incorrect, it manages retry attempts and provides feedback to the user.
+   *
+   * @returns {void}
    */
   const checkAnswer = useCallback(async () => {
     const answer = userAnswer.trim()
@@ -225,8 +371,10 @@ export default function BookModal({ isOpen, onClose, onMaxFailedAttempts, onSend
       })
 
       if (data?.message?.includes('Book unlocked successfully')) {
-        unlockBook(book.id)
-        setShowEffect(true)
+        unlockBook(book.id, book.description)
+        setAnimationPhase(1)
+        setBookDescription(book.description)
+        setHasUnlockedSecrets(hasSecrets)
         onSendMessage('')
       }
     } catch (error) {
@@ -252,7 +400,6 @@ export default function BookModal({ isOpen, onClose, onMaxFailedAttempts, onSend
         onSendMessage('We must clear all this messy library...')
         onMaxFailedAttempts()
         onClose()
-        setShowEffect(false)
       }
     }
   }, [
@@ -266,11 +413,102 @@ export default function BookModal({ isOpen, onClose, onMaxFailedAttempts, onSend
     onMaxFailedAttempts,
     isUnlocked,
     isInCooldown,
-    onSendMessage
+    onSendMessage,
+    hasSecrets,
+    setHasUnlockedSecrets
   ])
 
   /**
-   * Effect hook for initializing modal state when opened.
+   * @useEffect
+   * @description Sets a timeout to reset the animation phase after a delay if no secrets are involved.
+   * Clears the timeout if the component unmounts or the dependencies change.
+   *
+   * @dependency {number} animationPhase - The current phase of the animation.
+   * @dependency {boolean} hasUnlockedSecrets - A boolean indicating if secrets have been unlocked.
+   */
+  useEffect(() => {
+    if (animationPhase === 1) {
+      const timer = setTimeout(() => {
+        if (!hasUnlockedSecrets) {
+          setAnimationPhase(0)
+        }
+      }, 3000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [animationPhase, hasUnlockedSecrets])
+
+  /**
+   * @useEffect
+   * @description Updates the displayed book description when the list of unlocked books changes.
+   *
+   * @dependency {string} unlockedDescription - The description of the currently focused book.
+   * @dependency {Array<string>} booksUnlocked - An array containing the IDs of the unlocked books.
+   */
+  useEffect(() => {
+    setBookDescription(unlockedDescription)
+  }, [booksUnlocked])
+
+  /**
+   * @useEffect
+   * @description When the animation phase is 2 and secret words are available, this effect prepares the book description
+   * by replacing placeholders with the secret words. It then sets a timeout to display the processed description
+   * and triggers the animation of the secret words. Clears the timeout on unmount or dependency change.
+   *
+   * @dependency {number} animationPhase - The current phase of the animation.
+   * @dependency {object} secretsData - An object containing the secret words (if available).
+   * @dependency {string} book.description - The original description of the book.
+   * @dependency {function} animateSecretWords - A function to animate the revealed secret words.
+   */
+  useEffect(() => {
+    if (animationPhase === 2 && secretsData?.words) {
+      const result = prepareDescription(book.description, secretsData.words)
+      setReplacedWords(result.replacedWordInfo)
+
+      const timer = setTimeout(() => {
+        setBookDescription(result.processedDescription)
+      }, MESSAGE_DURATION_MS)
+
+      animateSecretWords(result.replacedWordInfo)
+
+      return () => clearTimeout(timer)
+    }
+  }, [animationPhase, secretsData, book.description, animateSecretWords])
+
+  /**
+   * @useEffect
+   * @description Triggered when `showSecret` becomes true and secret words are available. It prepares and displays
+   * the book description with the secrets, sets the animation phase to 2, stores the updated description,
+   * and initiates the animation of the secret words.
+   *
+   * @dependency {boolean} showSecret - A boolean indicating whether to show the secret words.
+   * @dependency {object} secretsData - An object containing the secret words (if available).
+   * @dependency {string} book.description - The original description of the book.
+   * @dependency {function} animateSecretWords - A function to animate the revealed secret words.
+   */
+  useEffect(() => {
+    if (showSecret && secretsData?.words) {
+      const result = prepareDescription(book.description, secretsData.words)
+      setReplacedWords(result.replacedWordInfo)
+      setBookDescription(result.processedDescription)
+      setAnimationPhase(2)
+      storeBookDescription(book.id, bookDescription)
+
+      animateSecretWords(result.replacedWordInfo)
+    }
+  }, [showSecret, secretsData, book.description, animateSecretWords])
+
+  /**
+   * @useEffect
+   * @description Manages the initial message displayed when the modal opens for a locked and non-cooldown book.
+   * If the book has a status of 1, it prompts the user to answer a riddle. It also randomly sets the text
+   * for a button (presumably the submit button).
+   *
+   * @dependency {boolean} isOpen - Indicates whether the modal is currently open.
+   * @dependency {boolean} isUnlocked - Indicates whether the current book is unlocked.
+   * @dependency {boolean} isInCooldown - Indicates whether the user is currently in a cooldown period.
+   * @dependency {function} onSendMessage - A function to send messages to the user interface.
+   * @dependency {number} book?.status - The status of the current book.
    */
   useEffect(() => {
     if (isOpen && !isUnlocked && !isInCooldown) {
@@ -288,8 +526,12 @@ export default function BookModal({ isOpen, onClose, onMaxFailedAttempts, onSend
   }, [isOpen, isUnlocked, isInCooldown, onSendMessage, book?.status])
 
   /**
-   * Memoized restricted content JSX based on current state.
-   * @type {React.ReactElement}
+   * @function restrictedContent
+   * @description Renders different UI components based on the current state of the book interaction,
+   * such as cooldown period, loading state, locked state requiring a riddle, or no restricted content.
+   *
+   * @returns {JSX.Element | null} - Returns JSX elements to display appropriate content based on the state,
+   * or null if no restricted content is needed (e.g., the book is unlocked).
    */
   const restrictedContent = useMemo(() => {
     if (isInCooldown) {
@@ -388,8 +630,12 @@ export default function BookModal({ isOpen, onClose, onMaxFailedAttempts, onSend
   ])
 
   /**
-   * Memoized book content structure.
-   * @type {BookContent[]}
+   * @constant bookContent
+   * @description An array containing the content for the book's pages. It dynamically determines the right page's
+   * title and content based on the book's status (cooldown, restricted, or showing description).
+   *
+   * @returns {Array<Object>} - An array with a single object representing the book's two pages.
+   * Each page object has a `leftPage` and a `rightPage` property, containing the title, content, and index.
    */
   const bookContent = useMemo(
     () => [
@@ -406,7 +652,9 @@ export default function BookModal({ isOpen, onClose, onMaxFailedAttempts, onSend
               ? 'Restricted Section'
               : 'Description',
           content:
-            book?.status === 1 && !isUnlocked ? restrictedContent : (book?.description ?? ''),
+            book?.status === 1 && !isUnlocked
+              ? restrictedContent
+              : bookDescription || (book?.description ?? ''),
           index: 2
         }
       }
@@ -415,7 +663,13 @@ export default function BookModal({ isOpen, onClose, onMaxFailedAttempts, onSend
   )
 
   /**
-   * Effect hook for handling escape key to close modal.
+   * @useEffect
+   * @description Adds an event listener to the window to handle the 'Escape' key press. When pressed,
+   * it calls the `onClose` function to close the modal. It also removes the event listener when the
+   * component unmounts or when the `isOpen` or `onClose` dependencies change.
+   *
+   * @dependency {boolean} isOpen - Indicates whether the modal is currently open.
+   * @dependency {function} onClose - A function to close the modal.
    */
   useEffect(() => {
     if (!isOpen) return
@@ -423,7 +677,6 @@ export default function BookModal({ isOpen, onClose, onMaxFailedAttempts, onSend
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         onClose()
-        setShowEffect(false)
       }
     }
 
@@ -432,12 +685,80 @@ export default function BookModal({ isOpen, onClose, onMaxFailedAttempts, onSend
   }, [isOpen, onClose])
 
   /**
-   * Memoized book size dimensions.
-   * @type {Object}
-   * @property {string} width - The width of the book.
-   * @property {string} height - The height of the book.
+   * @constant bookSize
+   * @description Memoizes the result of the `getBookSize` function, which likely determines the dimensions
+   * or other size-related properties of the book component. This ensures that `getBookSize` is only
+   * recalculated when its internal dependencies change (though none are explicitly listed here, it likely
+   * depends on window size or other layout-related states within the component or its context).
    */
   const bookSize = useMemo(() => getBookSize(), [])
+
+  /**
+   * @function prepareDescription
+   * @description Replaces sequences of '#' characters in a given description with provided words.
+   * It identifies the '#' patterns, and if the number of patterns matches the number of words,
+   * it substitutes each pattern with a corresponding word, maintaining the order.
+   *
+   * @param {string} description - The original string containing '#' placeholders for secret words.
+   * @param {Array<string>} words - An array of secret words to be inserted into the description.
+   * @returns {object} - An object containing the processed description with replaced words
+   * and an array of information about the replaced words (index, word, length).
+   */
+  const prepareDescription = (description, words) => {
+    let result = description
+    const secretPatternRegex = /#+/g
+    const matches = [...description.matchAll(secretPatternRegex)]
+    const replacedWordInfo = []
+
+    if (words && Array.isArray(words) && matches && matches.length === words.length) {
+      const reversedMatches = [...matches].reverse()
+      const reversedWords = [...words].reverse()
+
+      reversedMatches.forEach((match, index) => {
+        const startIndex = match.index
+        const endIndex = startIndex + match[0].length
+        const wordToInsert = reversedWords[index]
+
+        result = result.substring(0, startIndex) + wordToInsert + result.substring(endIndex)
+
+        replacedWordInfo.unshift({
+          index: startIndex,
+          word: wordToInsert,
+          length: wordToInsert.length
+        })
+      })
+    }
+
+    return {
+      processedDescription: result,
+      replacedWordInfo
+    }
+  }
+
+  /**
+   * @constant processedDescription
+   * @description Memoizes the result of the `prepareDescription` function. It takes the book's description
+   * and an array of secret words (if available) from `secretsData`. If the `prepareDescription` function
+   * returns information about replaced words, it updates the `replacedWords` and `bookDescription` state.
+   *
+   * @returns {object} - An object containing the processed description (either the original book description
+   * if no secrets are available or the description with replaced words) and information about the replaced words.
+   *
+   * @dependency {string} book.description - The original description of the book.
+   * @dependency {Array<string>} secretsData?.words - An array of secret words to potentially insert.
+   */
+  useMemo(() => {
+    const result = prepareDescription(book.description, secretsData?.words || [])
+    if (result?.replacedWordInfo) {
+      setReplacedWords(result.replacedWordInfo)
+      setBookDescription(result?.processedDescription)
+    }
+
+    return {
+      processedDescription: book.description || result?.processedDescription,
+      replacedWordInfo: result?.replacedWordInfo || []
+    }
+  }, [book.description, secretsData?.words])
 
   return (
     <AnimatePresence mode='wait'>
@@ -490,6 +811,14 @@ export default function BookModal({ isOpen, onClose, onMaxFailedAttempts, onSend
                       <div className='text-gray-700 font-serif flex-grow overflow-y-auto'>
                         {bookContent[0].leftPage.content}
                       </div>
+                      {book.description.includes('#') && (
+                        <img
+                          src='TornPaper.webp'
+                          alt='Image of a torn paper'
+                          className='absolute top-67 left-67 cursor-pointer size-8'
+                          onClick={handleSecretClick}
+                        />
+                      )}
                       <div className='mt-auto flex justify-between items-center pt-4 border-t border-amber-900/10'>
                         <button
                           disabled
@@ -512,15 +841,32 @@ export default function BookModal({ isOpen, onClose, onMaxFailedAttempts, onSend
                         {bookContent[0].rightPage.title}
                       </h2>
                       <div className='text-gray-700 font-serif flex-grow overflow-y-auto'>
-                        {isUnlocked && !showEffect && book?.description}
-                        {isUnlocked && showEffect && (
+                        {isUnlocked && animationPhase === 0 && unlockedDescription}
+                        {isUnlocked && animationPhase === 1 && (
+                          <TextGenerateEffectOriginal
+                            words={unlockedDescription || book?.description}
+                            className='mt-4'
+                          />
+                        )}
+                        {isUnlocked && animationPhase === 2 && (
                           <TextGenerateEffect
-                            words={book?.description}
+                            words={bookDescription}
+                            replacedWordInfo={replacedWords}
                             className='mt-4'
                           />
                         )}
                         {!isUnlocked && bookContent[0].rightPage.content}
                       </div>
+                      {animationComplete && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.5 }}
+                          className='mt-4 text-emerald-700 font-magic'
+                        >
+                          The secrets have been revealed!
+                        </motion.div>
+                      )}
                       <div className='mt-auto flex justify-between items-center pt-4 border-t border-amber-900/10'>
                         <span className='text-sm text-emerald-800 font-serif'>
                           {bookContent[0].rightPage.index}

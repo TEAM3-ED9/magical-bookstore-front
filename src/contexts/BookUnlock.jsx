@@ -6,6 +6,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
  * @property {string} bookId - The ID of the unlocked book.
  * @property {number} unlockTime - The timestamp (in milliseconds) when the book was unlocked.
  * @property {number|null} timerId - The ID of the timer associated with the unlock (currently unused).
+ * @property {string} [description] - The description of the book (optional).
  */
 
 /**
@@ -13,9 +14,10 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
  * @property {UnlockedBook[]} booksUnlocked - An array of currently unlocked books.
  * @property {Record<string, number>} retryCounts - An object mapping book IDs to the number of failed unlock attempts.
  * @property {Record<string, number>} cooldownEndTimes - An object mapping book IDs to the timestamp (in milliseconds) when the cooldown period ends.
- * @property {function(string): void} unlockBook - A function to unlock a book.
+ * @property {function(string, string): void} unlockBook - A function to unlock a book, now accepts description.
  * @property {function(string): void} incrementRetryCount - A function to increment the retry count for a book and potentially start a cooldown.
  * @property {function(string): void} resetRetryCount - A function to reset the retry count and cooldown for a book.
+ * @property {function(string, string): void} storeBookDescription - Function to store book description.
  */
 
 /**
@@ -50,6 +52,15 @@ const clearLocalStorage = (keys) => {
  * @param {string[]} [props.defaultUnlockedBookIds=[]] - An array of book IDs that should be initially marked as unlocked.
  * @returns {React.ReactElement} The BookUnlockContext provider.
  */
+/**
+ * Provides context for managing the unlocking of books, including retry counts, cooldowns, and descriptions.
+ *
+ * @component
+ * @param {Object} props - The component props.
+ * @param {React.ReactNode} props.children - The child components to render within the provider.
+ * @param {string[]} [props.defaultUnlockedBookIds=[]] - An array of book IDs that should be unlocked by default.
+ * @returns {React.ReactElement} The provider component that wraps its children with the book unlock context.
+ */
 export const BookUnlockProvider = ({ children, defaultUnlockedBookIds = [] }) => {
   /**
    * An array of objects representing the currently unlocked books.
@@ -60,8 +71,8 @@ export const BookUnlockProvider = ({ children, defaultUnlockedBookIds = [] }) =>
   /**
    * State storing the number of failed unlock attempts for each book.
    * @type {Array} A tuple containing:
-   *   - [0]: {Object.<string, number>} The retry counts (keys: book IDs, values: counts)
-   *   - [1]: {Function} The state setter function
+   * - [0]: {Object.<string, number>} The retry counts (keys: book IDs, values: counts)
+   * - [1]: {Function} The state setter function
    */
   const [retryCounts, setRetryCounts] = useState(() => {
     try {
@@ -79,8 +90,8 @@ export const BookUnlockProvider = ({ children, defaultUnlockedBookIds = [] }) =>
    * The keys are book IDs, and the values are the end times.
    * This state is persisted in local storage.
    * @type {Array} A tuple containing:
-   *   - [0]: {Object.<string, number>} The retry counts (keys: book IDs, values: counts)
-   *   - [1]: {Function} The state setter function
+   * - [0]: {Object.<string, number>} The retry counts (keys: book IDs, values: counts)
+   * - [1]: {Function} The state setter function
    */
   const [cooldownEndTimes, setCooldownEndTimes] = useState(() => {
     try {
@@ -92,6 +103,33 @@ export const BookUnlockProvider = ({ children, defaultUnlockedBookIds = [] }) =>
       return {}
     }
   })
+
+  /**
+   * Stores the description of a book.  This function updates the `booksUnlocked`
+   * state to include the description.  If the book is already unlocked, it
+   * updates the existing entry; otherwise, it does *not* unlock the book.
+   *
+   * @param {string} bookId - The ID of the book.
+   * @param {string} description - The description of the book.
+   * @returns {void}
+   */
+  const storeBookDescription = useCallback((bookId, description) => {
+    setBooksUnlocked((prevBooks) => {
+      const existingBookIndex = prevBooks.findIndex((book) => book.bookId === bookId)
+      if (existingBookIndex > -1) {
+        // Update existing book entry
+        const updatedBooks = [...prevBooks]
+        updatedBooks[existingBookIndex] = {
+          ...updatedBooks[existingBookIndex],
+          description
+        }
+        return updatedBooks
+      } else {
+        // Book not unlocked, add only description.
+        return prevBooks // Important:  Do not add a new unlocked book here.
+      }
+    })
+  }, [])
 
   /**
    * Resets the retry count and clears the cooldown end time for a specific book.
@@ -129,7 +167,7 @@ export const BookUnlockProvider = ({ children, defaultUnlockedBookIds = [] }) =>
       const newUnlocked = [...prev]
       defaultUnlockedBookIds.forEach((bookId) => {
         if (!newUnlocked.some((b) => b.bookId === bookId)) {
-          newUnlocked.push({ bookId, unlockTime: Date.now(), timerId: null })
+          newUnlocked.push({ bookId, unlockTime: Date.now(), timerId: null, description: '' }) // Added description
         }
       })
       return newUnlocked
@@ -152,14 +190,15 @@ export const BookUnlockProvider = ({ children, defaultUnlockedBookIds = [] }) =>
   /**
    * Unlocks a book by adding its ID to the `booksUnlocked` state and resetting its retry count.
    *
-   * @type {function(string): void}
+   * @type {function(string, string): void}
    */
   const unlockBook = useCallback(
-    (bookId) => {
+    (bookId, description = '') => {
+      // added description
       const unlockTime = Date.now()
       setBooksUnlocked((prev) => {
         if (prev.some((b) => b.bookId === bookId)) return prev
-        return [...prev, { bookId, unlockTime, timerId: null }]
+        return [...prev, { bookId, unlockTime, timerId: null, description }] // Added description
       })
       resetRetryCount(bookId)
     },
@@ -212,9 +251,18 @@ export const BookUnlockProvider = ({ children, defaultUnlockedBookIds = [] }) =>
       cooldownEndTimes,
       unlockBook,
       incrementRetryCount,
-      resetRetryCount
+      resetRetryCount,
+      storeBookDescription // Added storeBookDescription to the context value
     }),
-    [booksUnlocked, retryCounts, cooldownEndTimes, unlockBook, incrementRetryCount, resetRetryCount]
+    [
+      booksUnlocked,
+      retryCounts,
+      cooldownEndTimes,
+      unlockBook,
+      incrementRetryCount,
+      resetRetryCount,
+      storeBookDescription
+    ] //Added storeBookDescription
   )
 
   return <BookUnlockContext.Provider value={contextValue}>{children}</BookUnlockContext.Provider>
