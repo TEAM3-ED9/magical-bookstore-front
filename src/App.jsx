@@ -1,8 +1,7 @@
-
-import Bookshelf from "@/components/BookShelf"
-import { useState } from "react"
-import GuideAvatar from "./components/molecules/GuideAvatar"
-import { SparklesCore } from "./components/ui/sparkles"
+import Bookshelf from '@/components/BookShelf'
+import { useState, useEffect } from 'react'
+import GuideAvatar from './components/molecules/GuideAvatar'
+import { SparklesCore } from './components/ui/sparkles'
 
 /**
  * The main application component.
@@ -13,13 +12,13 @@ import { SparklesCore } from "./components/ui/sparkles"
 export default function App() {
   /**
    * State variable to track if the initial loading period is complete.
-   * @type {ReturnType<typeof useState<boolean>>
+   * @type {ReturnType<typeof useState<boolean>>}
    */
   const [loaded, setLoaded] = useState(false)
 
   /**
    * State variable to hold the message to be displayed by the guide avatar.
-   * @type {ReturnType<typeof useState<string | null>}
+   * @type {ReturnType<typeof useState<string | null>>}
    */
   const [guideMessage, setGuideMessage] = useState(null)
 
@@ -38,18 +37,18 @@ export default function App() {
   }, [])
 
   return (
-    <div className="relative">
-      <div className="fixed inset-0 bg-[url(/background.webp)] bg-cover" />
-      <div className="fixed inset-0 bg-black/10 backdrop-blur-sm" />
-      <div className="fixed inset-0 z-10">
+    <div className='relative'>
+      <div className='fixed inset-0 bg-[url(/background.webp)] bg-cover' />
+      <div className='fixed inset-0 bg-black/10 backdrop-blur-sm' />
+      <div className='fixed inset-0 z-10'>
         <SparklesCore
-          id="tsparticlesfullpage"
-          background="transparent"
+          id='tsparticlesfullpage'
+          background='transparent'
           minSize={0.6}
           maxSize={2}
           particleDensity={20}
-          className="w-full h-full"
-          particleColor="#FFFFFF"
+          className='w-full h-full'
+          particleColor='#FFFFFF'
         />
       </div>
       {loaded && <GuideAvatar message={guideMessage} />}
